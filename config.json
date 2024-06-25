@@ -4,7 +4,7 @@
     "title_style": {"font": ["times new roman", 12, "bold"], "bg": "yellow", "fg": "black"},
     "main_title_style": {"font": ["times new roman", 25, "bold"], "bg": "black", "fg": "white"},
     "subtitle_style": {"font": ["times new roman", 12, "bold"], "bg": "white", "fg": "black"},
-    "label_style": {"font": ["times new roman", 12], "bg": "white", "fg": "black"},
+    "label_style": {"font": ["times new roman", 15], "bg": "white", "fg": "black"},
     "entry_style": {"font": ["times new roman", 15, "bold"], "bd": 5, "relief": "groove"},
     "combobox_style": {"width": 10},
     "button_style": {"bg": "white", "fg": "black", "font": ["Courier New", 12, "bold"], "padx": 20, "pady": 20},
