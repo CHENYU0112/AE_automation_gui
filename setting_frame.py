@@ -22,15 +22,15 @@ class SettingFrame(tk.Frame):
         self.create_button_frame()
 
     def create_title(self):
-        title = tk.Label(self, text="Setting", font=FONT_TITLE, bg='black', fg="white")
-        title.place(relx=0.5, y=20, anchor="center")
+        title = tk.Label(self, text="Setting", font=("times new roman", 20, "bold"), bg='black', fg="white")
+        title.pack(fill=tk.X, padx=5, pady=5)
 
     def create_power_supply_frame(self):
         frame = tk.Frame(self, bd=4, relief=tk.RIDGE, bg='white')
         frame.place(x=25, y=60, width=450, height=150)
         
         tk.Label(frame, text="Power_Supply", font=FONT_BOLD, bg='yellow', fg="black").place(x=5, y=5)
-        tk.Label(frame, text=self.instrument_manager.instruments['supply'], font=FONT_BOLD, bg='white', fg="black").place(x=120, y=5)
+        tk.Label(frame, text=self.instrument_manager.instruments['supply'], font=FONT_BOLD, bg='white', fg="black").place(x=115, y=5)
 
         self.vin = self.create_entry(frame, "Vin(V)", 35)
         self.iin = self.create_entry(frame, "Iin(A)", 65)
@@ -44,7 +44,10 @@ class SettingFrame(tk.Frame):
         frame.place(x=25, y=220, width=450, height=220)
         
         tk.Label(frame, text="DAQ", font=FONT_BOLD, bg='yellow', fg="black").place(x=5, y=5)
-        tk.Label(frame, text=self.instrument_manager.instruments['DAQ'], font=FONT_BOLD, bg='white', fg="black").place(x=110, y=5)
+        tk.Label(frame, text=self.instrument_manager.instruments['DAQ'], font=FONT_BOLD, bg='white', fg="black").place(x=115, y=5)
+        # Check if 'DAQ' key exists in instruments dictionary
+        # daq_info = self.instrument_manager.instruments.get('DAQ', 'Not detected')
+        # tk.Label(frame, text=daq_info, font=FONT_BOLD, bg='white', fg="black").place(x=110, y=5)
 
         self.daq_channels = []
         for i in range(1, 7):
@@ -196,14 +199,34 @@ class SettingFrame(tk.Frame):
                 raise ValueError(f"Invalid input for {field_name}")
 
         values = {
-            'input_v': safe_float(self.vin.get(), "Vin"),
-            'input_i': safe_float(self.iin.get(), "Iin"),
-            'max_vin': safe_float(self.max_vin.get(), "Max Vin"),
-            'max_iin': safe_float(self.max_iin.get(), "Max Iin"),
-            'max_iout': safe_float(self.max_iout.get(), "Max Iout"),
-            'low_load': [safe_float(entry.get(), f"Low Load {i}") for i, entry in enumerate(self.low_load_entries, 1)],
-            'high_load': [safe_float(entry.get(), f"High Load {i}") for i, entry in enumerate(self.high_load_entries, 1)],
-            'shunt_settings': [safe_float(entry.get(), f"Shunt Setting {i}") for i, entry in enumerate(self.shunt_entries, 1)]
+            'input_v': safe_float(self.vin.get(), "Input Voltage (Input_V)"),
+            'input_i': safe_float(self.iin.get(), "Input Current (Input_I)"),
+            'max_vin': safe_float(self.max_vin.get(), "Protective Maximum Input Voltage (MAX_Vin)"),
+            'max_iin': safe_float(self.max_iin.get(), "Protective Maximum Input Current (MAX_Iin)"),
+            'max_iout': safe_float(self.max_iout.get(), "Protective Maximum Output Current (MAX_Iout)"),
+            'low_load': [
+                safe_float(self.low_load_start.get(), "Low Load Start"),
+                safe_float(self.low_load_step.get(), "Low Load Step"),
+                safe_float(self.low_load_stop.get(), "Low Load Stop")
+            ],
+            'high_load': [
+                safe_float(self.high_load_step.get(), "High Load Step"),
+                safe_float(self.high_load_stop.get(), "High Load Stop")
+            ],
+            'shunt_settings': [
+                safe_float(self.input_shunt_max_voltage.get(), "Input Shunt Max Voltage"),
+                safe_float(self.input_shunt_max_current.get(), "Input Shunt Max Current"),
+                safe_float(self.output_shunt_max_voltage.get(), "Output Shunt Max Voltage"),
+                safe_float(self.output_shunt_max_current.get(), "Output Shunt Max Current")
+            ],
+            'daq': [
+                self.input_v_ch.get(),
+                self.input_i_ch.get(),
+                self.output_v_ch.get(),
+                self.output_i_ch.get(),
+                self.vcc_ch.get(),
+                self.ldo_ch.get()
+            ]
         }
         return values
 
@@ -215,22 +238,38 @@ class SettingFrame(tk.Frame):
         return None
 
     def validate_values(self, values):
-        if values['input_v'] > values['max_vin']:
-            messagebox.showwarning("Warning", "Protective maximum input voltage (MAX_Vin) must be at least the Input voltage (Input_V)")
-        elif values['input_i'] > values['max_iin']:
-            messagebox.showwarning("Warning", "Protective maximum input current (MAX_Iin) must be at least the Input current (Input_I)")
-        elif values['input_v'] > MAX_INPUT_VOLTAGE or values['input_v'] < MIN_INPUT_VOLTAGE:
-            messagebox.showwarning("Warning", f"Input voltage (Input_V) range should be between {MIN_INPUT_VOLTAGE}V~{MAX_INPUT_VOLTAGE}V")
-        elif values['high_load'][0] < values['low_load'][2]:
-            messagebox.showwarning("Warning", "High Load Start Current should not be lower than the Low Load Stop")
-        elif any(load > MAX_OUTPUT_CURRENT for load in [values['low_load'][2], values['high_load'][2], values['max_iout']]):
-            messagebox.showwarning("Warning", f"Output current should < {MAX_OUTPUT_CURRENT}A")
-        elif values['low_load'][1] > (values['low_load'][2] - values['low_load'][0]):
-            messagebox.showwarning("Warning", "Invalid low load step")
-        elif values['high_load'][1] > (values['high_load'][2] - values['high_load'][0]):
-            messagebox.showwarning("Warning", "Invalid high load step")
-        else:
-            return True
+        try:
+            input_v = float(values['input_v'])
+            max_vin = float(values['max_vin'])
+            input_i = float(values['input_i'])
+            max_iin = float(values['max_iin'])
+            low_load_start = float(values['low_load'][0])
+            low_load_step = float(values['low_load'][1])
+            low_load_stop = float(values['low_load'][2])
+            high_load_start = float(values['high_load'][0])
+            high_load_step = float(values['high_load'][1])
+            high_load_stop = float(values['high_load'][2])
+            max_iout = float(values['max_iout'])
+
+            if input_v > max_vin:
+                raise ValueError("Protective maximum input voltage (MAX_Vin) must be at least the Input voltage (Input_V)")
+            elif input_i > max_iin:
+                raise ValueError("Protective maximum input current (MAX_Iin) must be at least the Input current (Input_I)")
+            elif input_v > MAX_INPUT_VOLTAGE or input_v < MIN_INPUT_VOLTAGE:
+                raise ValueError(f"Input voltage (Input_V) range should be between {MIN_INPUT_VOLTAGE}V~{MAX_INPUT_VOLTAGE}V")
+            elif high_load_start < low_load_stop:
+                raise ValueError("High Load Start Current should not be lower than the Low Load Stop")
+            elif any(load > MAX_OUTPUT_CURRENT for load in [low_load_stop, high_load_stop, max_iout]):
+                raise ValueError(f"Output current should < {MAX_OUTPUT_CURRENT}A")
+            elif low_load_step > (low_load_stop - low_load_start):
+                raise ValueError("Invalid low load step")
+            elif high_load_step > (high_load_stop - high_load_start):
+                raise ValueError("Invalid high load step")
+            else:
+                return True
+        except ValueError as e:
+            messagebox.showwarning("Warning", str(e))
+
         return False
 
     def lock_frame(self):

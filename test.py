@@ -1,54 +1,49 @@
-from tkinter import ttk
-from tkinter import *
-import pyvisa as visa
 from measure_eff_Tek import eff
-def update_combobox(combobox_options, selected_value):
-  """
-  This function removes the selected value from the provided options list 
-  and returns the updated list.
+from mock_instruments import MockInstrumentManager
 
-  Args:
-      combobox_options (list): The original list of options.
-      selected_value (str): The value to be removed.
+def test_efficiency():
+    settings = {
+        'input_shunt_max_voltage': 0.1,
+        'input_shunt_max_current': 1.0,
+        'output_shunt_max_voltage': 0.1,
+        'output_shunt_max_current': 1.0,
+        'input_v_ch': 1,
+        'input_i_ch': 2,
+        'output_v_ch': 3,
+        'output_i_ch': 4,
+        'vcc_ch': 5,
+        'ldo_ch': 6,
+        'Max_input_voltage': 20,
+        'Max_input_current': 2,
+        'Max_load_current': 1,
+        'Input_V': [5, 10, 15],
+        'Input_I': 1,
+        'Low_load_start': 0.1,
+        'Low_load_step': 0.1,
+        'Low_load_stop': 0.5,
+        'High_load_stop': 1,
+        'High_load_step': 0.1,
+        'low_load_timing': 1,
+        'high_load_timing': 1,
+        'FRE': 1
+    }
 
-  Returns:
-      list: The updated list of options without the selected value.
-  """
-  if selected_value in combobox_options:
-    combobox_options.remove(selected_value)
-  return combobox_options
+    instrument_manager = MockInstrumentManager()
 
-# Initial options for the comboboxes
-DAQ_combobox = ('input V', 'input I', 'output V', 'output I', 'Vcc', 'LDO')
+    def progress_callback(value):
+        print(f"Progress: {value}%")
 
-# Create the main window
-root = Tk()
-root.title("Comboboxes with Shared Options")
+    def result_callback(message):
+        print(f"Result: {message}")
 
-# Create a frame to hold the labels and comboboxes
-daq_frame = tk.Frame(root)
-daq_frame.pack(padx=10, pady=10)
+    def graph_callback(buffer):
+        print("Graph generated")
 
-# Create six comboboxes and labels
-channel_labels = ("CH1", "CH2", "CH3", "CH4", "CH5", "CH6")
-comboboxes = []
-for i in enumerate(DAQ_combobox):
+    try:
+        excel_buffer = eff(settings, instrument_manager, progress_callback, result_callback, graph_callback)
+        print("Test completed successfully")
+    except Exception as e:
+        print(f"Test failed: {str(e)}")
 
-  DAQ['values'] = DAQ_combobox.copy()  # Copy the original list to avoid modification
-  
-  comboboxes.append(combobox)  # Store comboboxes in a list
-
-  # Bind a function to update other comboboxes on selection change
-  def update_other_comboboxes(event, combobox=combobox, other_comboboxes=comboboxes.copy()):
-    # Remove the selected value from the copy of the original list
-    updated_options = update_combobox(DAQ_combobox.copy(), combobox.get())
-
-    # Update the options for all other comboboxes (excluding the current one)
-    for other_combobox in other_comboboxes:
-      if other_combobox != combobox:
-        other_combobox['values'] = updated_options
-
-  combobox.bind("<<ComboboxSelected>>", update_other_comboboxes)
-
-# Start the main event loop
-root.mainloop()
+if __name__ == "__main__":
+    test_efficiency()
