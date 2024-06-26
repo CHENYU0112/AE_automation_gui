@@ -46,10 +46,10 @@ class MainApplication(tk.Frame):
 
     def create_frames(self):
         self.setting_frame = SettingFrame(self, self.instrument_manager)
-        self.setting_frame.place(x=20, y=60, width=500, height=1000)  
+        self.setting_frame.place(x=20, y=60, width=500, height=1100)  
 
         self.testing_frame = TestingFrame(self, self.instrument_manager, self.setting_frame)
-        self.testing_frame.place(x=550, y=60, width=1400, height=1000)
+        self.testing_frame.place(x=550, y=60, width=1400, height=1100)
         
         # Lock the testing frame immediately after creation
         self.lock_testing_frame()

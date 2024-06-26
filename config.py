@@ -44,7 +44,9 @@ DEFAULT_SETTINGS = {
     },
     'load': {
         'low_load': {'start': 0.1, 'step': 0.1, 'stop': 1.0},
-        'high_load': {'start': 1.0, 'step': 0.5, 'stop': 5.0}
+        'high_load': {'start': 1.0, 'step': 0.5, 'stop': 5.0},
+        'low_load_delay': 3, 
+        'high_load_delay': 3  
     },
     'protection': {
         'max_vin': 16,

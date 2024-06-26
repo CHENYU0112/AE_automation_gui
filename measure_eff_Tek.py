@@ -34,6 +34,9 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
         Max_load_current, output_file, Input_V, Input_I, Low_load_start, Low_load_step, Low_load_stop, High_load_stop,
 
         High_load_step, low_load_timing, high_load_timing, FRE):
+    
+
+        
     print(f"""
         Input Shunt Parameters:
             - Max Voltage: {input_shunt_max_voltage}
@@ -1159,3 +1162,7 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
 
         print("Error: check I/O values")
 
+def calculate_total_steps(Input_V, Low_load_start, Low_load_stop, Low_load_step, High_load_stop, High_load_step):
+    low_load_steps = len(np.arange(Low_load_start, Low_load_stop, Low_load_step))
+    high_load_steps = len(np.arange(Low_load_stop, High_load_stop + 0.002, High_load_step))
+    return len(Input_V) * (low_load_steps + high_load_steps)
