@@ -7,7 +7,7 @@ import time
 import numpy as np
 from io import StringIO
 from efficiency_test import EfficiencyTest
-from measure_eff_Tek import eff
+from measure_eff_Tek import eff, set_stop_flag, reset_stop_flag,get_stop_flag
 from config import *
 
 class EfficiencyTab(tk.Frame):
@@ -23,6 +23,7 @@ class EfficiencyTab(tk.Frame):
     def create_widgets(self):
         self.create_control_frame()
         self.create_results_area()
+        self.create_excel_output_area()
 
     def create_control_frame(self):
         control_frame = tk.Frame(self, bd=2, relief=tk.RIDGE)
@@ -39,8 +40,37 @@ class EfficiencyTab(tk.Frame):
         self.progress_bar.pack(side=tk.LEFT, padx=5, expand=True, fill=tk.X)
 
     def create_results_area(self):
-        self.results_text = tk.Text(self, height=20, width=80)
-        self.results_text.pack(expand=True, fill=tk.BOTH, pady=10, padx=10)
+        results_frame = tk.Frame(self)
+        results_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, pady=10, padx=10)
+
+        results_label = tk.Label(results_frame, text="Test Output", font=("Arial", 12, "bold"))
+        results_label.pack()
+
+        text_frame = tk.Frame(results_frame)
+        text_frame.pack(expand=True, fill=tk.BOTH)
+
+        self.results_text = tk.Text(text_frame, height=20, width=60)
+        self.results_text.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
+
+        scrollbar = tk.Scrollbar(text_frame, command=self.results_text.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.results_text.config(yscrollcommand=scrollbar.set, state=tk.DISABLED)
+        
+    def create_excel_output_area(self):
+        excel_frame = tk.Frame(self)
+        excel_frame.pack(side=tk.RIGHT, expand=True, fill=tk.BOTH, pady=10, padx=10)
+
+        excel_label = tk.Label(excel_frame, text="Excel Output", font=("Arial", 12, "bold"))
+        excel_label.pack()
+
+        self.excel_text = tk.Text(excel_frame, height=20, width=60)
+        self.excel_text.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
+
+        scrollbar = tk.Scrollbar(excel_frame, command=self.excel_text.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        self.excel_text.config(yscrollcommand=scrollbar.set, state=tk.DISABLED)
         
     def start_efficiency_test(self):
         if self.test_running:
@@ -52,6 +82,7 @@ class EfficiencyTab(tk.Frame):
             
 
             self.test_running = True
+            reset_stop_flag()  # Reset the global stop flag
             self.start_button.config(state=tk.DISABLED)
             self.stop_button.config(state=tk.NORMAL)
 
@@ -59,7 +90,7 @@ class EfficiencyTab(tk.Frame):
             self.test_thread = threading.Thread(target=self.run_test_thread, args=(settings,))
             self.test_thread.start()
 
-            self.after(100, self.check_test_thread)
+          #  self.after(100, self.check_test_thread)
             self.after(100, self.update_output)
 
         except Exception as e:
@@ -91,17 +122,18 @@ class EfficiencyTab(tk.Frame):
                 self.print_validated_settings(validated_settings)
                 self.setup_progress_bar(validated_settings)
                 self.start_time = time.time()
-                self.after(0, self.update_progress_by_time)  # Start progress updates
+                self.after(0, self.update_progress_by_time)                   
                 eff(**validated_settings)
                 self.update_results("Test completed successfully!")
-            else:
-                self.update_results("Invalid settings. Please check the input values.")
         except Exception as e:
             self.update_results(f"Error during test: {str(e)}")
         finally:
             self.test_running = False
+            reset_stop_flag()
             self.restore_output()
-            self.progress_var.set(100)  # Ensure progress bar is full at the end
+            self.progress_var.set(100)
+            self.start_button.config(state=tk.NORMAL)
+            self.stop_button.config(state=tk.DISABLED)
             
             
     def setup_progress_bar(self, settings):
@@ -149,6 +181,7 @@ class EfficiencyTab(tk.Frame):
             return
         self.test_running = False
         self.update_results("Test stopped by user.")
+        set_stop_flag()  # Set the global stop flag
         self.start_button.config(state=tk.NORMAL)
         self.stop_button.config(state=tk.DISABLED)
         self.progress_var.set(100)  # Set progress to 100% when stopped
@@ -158,9 +191,18 @@ class EfficiencyTab(tk.Frame):
         self.progress_var.set(value)
 
     def update_results(self, message):
-        # Use after() to ensure this runs on the main thread
-        self.after(0, lambda: self.results_text.insert(tk.END, message + "\n"))
-        self.after(0, self.results_text.see, tk.END)
+        def update():
+            self.results_text.config(state=tk.NORMAL)
+            self.results_text.insert(tk.END, message + "\n")
+            self.results_text.see(tk.END)
+            self.results_text.config(state=tk.DISABLED)
+        self.after(0, update)
+        
+    def update_excel_output(self, data):
+        self.excel_text.config(state=tk.NORMAL)
+        self.excel_text.delete(1.0, tk.END)
+        self.excel_text.insert(tk.END, data)
+        self.excel_text.config(state=tk.DISABLED)
 
     def lock_frame(self):
         self.start_button.config(state=tk.DISABLED)

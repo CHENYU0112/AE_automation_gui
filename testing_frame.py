@@ -53,18 +53,3 @@ class TestingFrame(tk.Frame):
         # Enable all widgets in the efficiency tab
         self.efficiency_tab.unlock_frame()
 
-    def start_efficiency_test(self):
-        if not self.is_locked:
-            self.efficiency_tab.start_efficiency_test()
-
-    def stop_efficiency_test(self):
-        if not self.is_locked:
-            self.efficiency_tab.stop_efficiency_test()
-
-    def update_progress(self, value):
-        if not self.is_locked:
-            self.efficiency_tab.update_progress(value)
-
-    def update_results(self, text):
-        if not self.is_locked:
-            self.efficiency_tab.update_results(text)

@@ -8,7 +8,12 @@ from oscilloscope import Oscilloscope
 class InstrumentManager:
     def __init__(self):
         self.rm = pyvisa.ResourceManager()
-        self.instruments = {}
+        self.instruments = {
+            'supply': 'Not detected',
+            'load': 'Not detected',
+            'DAQ': 'Not detected',
+            'o_scope': 'Not detected'
+        }
         self.connected_instruments = {}
 
     def find_devices(self):

@@ -15,14 +15,13 @@ class MainApplication(tk.Frame):
         self.create_widgets()
 
     def setup_instruments(self):
-        self.instrument_manager.find_devices()
-        self.instrument_manager.connect_instruments()
         try:
+            self.instrument_manager.find_devices()
+            self.instrument_manager.connect_instruments()
             self.instrument_manager.verify_connections()
-            print("connection success")
+            print("Connection success")
         except ConnectionError as e:
-            messagebox.showerror("Instrument Connection Error", str(e))
-            self.parent.quit()
+            messagebox.showwarning("Instrument Connection Warning", str(e))
 
     def configure_window(self):
         self.parent.title("PoL Automation V1.0.0")

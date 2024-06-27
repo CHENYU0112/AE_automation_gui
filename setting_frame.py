@@ -325,10 +325,9 @@ class SettingFrame(tk.Frame):
         return self.instrument_manager
 
     def update_instrument_info(self):
-        # Update instrument information labels
-        supply_info = self.instrument_manager.instruments.get('supply', 'Not detected')
-        daq_info = self.instrument_manager.instruments.get('DAQ', 'Not detected')
-        load_info = self.instrument_manager.instruments.get('load', 'Not detected')
+        self.power_supply_label.config(text=self.instrument_manager.instruments['supply'])
+        self.daq_label.config(text=self.instrument_manager.instruments['DAQ'])
+        self.load_label.config(text=self.instrument_manager.instruments['load'])
 
         # Assuming you have labels for each instrument, update them here
         # For example:
