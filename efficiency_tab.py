@@ -7,7 +7,7 @@ import time
 import numpy as np
 from io import StringIO
 from efficiency_test import EfficiencyTest
-from measure_eff_Tek import eff
+from measure_eff_Tek import *
 from config import *
 
 class EfficiencyTab(tk.Frame):
@@ -93,7 +93,10 @@ class EfficiencyTab(tk.Frame):
                 self.start_time = time.time()
                 self.after(0, self.update_progress_by_time)  # Start progress updates
                 eff(**validated_settings)
-                self.update_results("Test completed successfully!")
+                if get_stop_flag ==True:
+                    self.update_results("Test completed successfully!")
+                else :
+                    self.update_results("Test stoppped!")
             else:
                 self.update_results("Invalid settings. Please check the input values.")
         except Exception as e:
@@ -147,8 +150,10 @@ class EfficiencyTab(tk.Frame):
     def stop_efficiency_test(self):
         if not self.test_running:
             return
+      
         self.test_running = False
         self.update_results("Test stopped by user.")
+        
         self.start_button.config(state=tk.NORMAL)
         self.stop_button.config(state=tk.DISABLED)
         self.progress_var.set(100)  # Set progress to 100% when stopped
