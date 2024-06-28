@@ -28,20 +28,22 @@ class SettingFrame(tk.Frame):
         
     def create_ic_selection_frame(self):
         frame = tk.Frame(self, bd=4, relief=tk.RIDGE, bg='white')
-        frame.place(x=25, y=40, width=450, height=60)
+        frame.place(x=25, y=50, width=450, height=40)
         
         tk.Label(frame, text="IC", font=FONT_BOLD, bg='yellow', fg="black").place(x=5, y=5)
         self.ic_combo = ttk.Combobox(frame, width=20, values=IC_OPTIONS)
         self.ic_combo.place(x=100, y=5)
         self.ic_combo.set('DEFAULT')  # Set default value
         self.ic_combo.bind("<<ComboboxSelected>>", self.on_ic_selected)
+        
+        
     def on_ic_selected(self, event):
         selected_ic = self.ic_combo.get()
         self.set_default_values(selected_ic)
         
     def create_power_supply_frame(self):
         frame = tk.Frame(self, bd=4, relief=tk.RIDGE, bg='white')
-        frame.place(x=25, y=80, width=450, height=150)
+        frame.place(x=25, y=100, width=450, height=150)
         
         tk.Label(frame, text="Power_Supply", font=FONT_BOLD, bg='yellow', fg="black").place(x=5, y=5)
         tk.Label(frame, text=self.instrument_manager.instruments['supply'], font=FONT_BOLD, bg='white', fg="black").place(x=115, y=5)
@@ -55,7 +57,7 @@ class SettingFrame(tk.Frame):
 
     def create_daq_frame(self):
         frame = tk.Frame(self, bd=4, relief=tk.RIDGE, bg='white')
-        frame.place(x=25, y=240, width=450, height=220)
+        frame.place(x=25, y=260, width=450, height=220)
         
         tk.Label(frame, text="DAQ", font=FONT_BOLD, bg='yellow', fg="black").place(x=5, y=5)
         tk.Label(frame, text=self.instrument_manager.instruments['DAQ'], font=FONT_BOLD, bg='white', fg="black").place(x=115, y=5)
@@ -70,7 +72,7 @@ class SettingFrame(tk.Frame):
 
     def create_load_frame(self):
         frame = tk.Frame(self, bd=4, relief=tk.RIDGE, bg='white')
-        frame.place(x=25, y=470, width=450, height=200)  # Increased height to accommodate new entries
+        frame.place(x=25, y=490, width=450, height=200)  # Increased height to accommodate new entries
         
         tk.Label(frame, text="E Load", font=FONT_BOLD, bg='yellow', fg="black").place(x=5, y=5)
         tk.Label(frame, text=self.instrument_manager.instruments['load'], font=FONT_BOLD, bg='white', fg="black").place(x=110, y=5)
@@ -92,7 +94,7 @@ class SettingFrame(tk.Frame):
 
     def create_protection_frame(self):
         frame = tk.Frame(self, bd=4, relief=tk.RIDGE, bg='white')
-        frame.place(x=25, y=680, width=450, height=150)
+        frame.place(x=25, y=700, width=450, height=150)
         
         tk.Label(frame, text="Protection", font=FONT_BOLD, bg='yellow', fg="black").place(x=5, y=5)
 
@@ -102,7 +104,7 @@ class SettingFrame(tk.Frame):
 
     def create_current_shunt_frame(self):
         frame = tk.Frame(self, bd=4, relief=tk.RIDGE, bg='white')
-        frame.place(x=25, y=840, width=450, height=150)
+        frame.place(x=25, y=860, width=450, height=150)
         
         tk.Label(frame, text="Current Shunt ", font=FONT_BOLD, bg='yellow', fg="black").place(x=5, y=5)
 
@@ -118,7 +120,7 @@ class SettingFrame(tk.Frame):
 
     def create_button_frame(self):
         frame = tk.Frame(self, bd=4, relief=tk.RIDGE, bg='gray', borderwidth=0)
-        frame.place(x=25, y=1000, width=450, height=60)
+        frame.place(x=25, y=1020, width=450, height=60)
 
         self.reset_button = tk.Button(frame, text="reset", bg='white', fg="black", padx=20, pady=5,
                   font=BUTTON_FONT, command=self.reset_fields)

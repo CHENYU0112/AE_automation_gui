@@ -37,57 +37,7 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
     
 
         
-    print(f"""
-        Input Shunt Parameters:
-            - Max Voltage: {input_shunt_max_voltage}
-            - Max Current: {input_shunt_max_current}
 
-        Output Shunt Parameters:
-            - Max Voltage: {output_shunt_max_voltage}
-            - Max Current: {output_shunt_max_current}
-
-        GPIB Addresses:
-            - Power Supply: {power_supply_GPIB_address}
-            - Data Logger: {data_logger_GPIB_address}
-            - Electronic Load: {electronic_load_GPIB_address}
-            - LeCroy: {lecory_usb_address}
-
-        Channel Assignments:
-            - Input Voltage: {input_v_ch}
-            - Input Current: {input_i_ch}
-            - Output Voltage: {output_v_ch}
-            - Output Current: {output_i_ch}
-            - Vcc: {vcc_ch}
-            - LDO: {ldo_ch}
-
-        Maximum Ratings:
-            - Input Voltage: {Max_input_voltage}
-            - Input Current: {Max_input_current}
-            - Load Current: {Max_load_current}
-
-        Output File: {output_file}
-
-        Load Sweep Parameters:
-            - Input Voltage: {Input_V}
-            - Input Current: {Input_I}
-
-        Low Load Sweep:
-            - Start: {Low_load_start}
-            - Step: {Low_load_step}
-            - Stop: {Low_load_stop}
-
-        High Load Sweep:
-            - Start: {High_load_start}
-            - Step: {High_load_step}
-            - Stop: {High_load_stop}
-
-        Timing Parameters:
-            - Low Load: {low_load_timing}
-            - High Load: {high_load_timing}
-
-        Frequency: {FRE}
-        """)
-    #FRE = 1
 
     print("FRE = ", FRE)
 

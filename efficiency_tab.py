@@ -28,6 +28,7 @@ class EfficiencyTab(tk.Frame):
         self.create_control_frame()
         self.create_results_area()
 
+
     def create_control_frame(self):
         control_frame = tk.Frame(self, bd=2, relief=tk.RIDGE)
         control_frame.pack(pady=10, padx=10, fill=tk.X)
@@ -41,10 +42,19 @@ class EfficiencyTab(tk.Frame):
         self.progress_var = tk.DoubleVar()
         self.progress_bar = ttk.Progressbar(control_frame, variable=self.progress_var, maximum=100)
         self.progress_bar.pack(side=tk.LEFT, padx=5, expand=True, fill=tk.X)
-
+        
     def create_results_area(self):
-        self.results_text = tk.Text(self, height=20, width=80)
-        self.results_text.pack(expand=True, fill=tk.BOTH, pady=10, padx=10)
+        results_frame = tk.Frame(self, bd=2, relief=tk.RIDGE)
+        results_frame.pack(pady=10, padx=10, fill=tk.BOTH, expand=True)  # Added expand=True
+
+        # Increased height and width for both text widgets
+        self.results_text = tk.Text(results_frame, height=30, width=40)
+        self.results_text.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, pady=10, padx=10)
+
+        self.output_text = tk.Text(results_frame, height=30, width=80)
+        self.output_text.pack(side=tk.RIGHT, expand=True, fill=tk.BOTH, pady=10, padx=10)
+
+
         
     def start_efficiency_test(self):
         if self.test_running:
@@ -233,22 +243,16 @@ class EfficiencyTab(tk.Frame):
 
         Frequency: {validated_settings['FRE']}
         """
-
-        # Print to console
-        print(print_string)
-
-        # Update GUI
         self.update_results(print_string)
-
         # Print argument name, data type, and value
-        type_string = "Argument Types and Values:\n"
-        for arg, value in validated_settings.items():
-            arg_string = f"{arg}: {type(value)} - {value}\n"
-            print(arg_string)  # Print to console
-            type_string += arg_string  # Add to GUI update string
+        # type_string = "Argument Types and Values:\n"
+        # for arg, value in validated_settings.items():
+        #     arg_string = f"{arg}: {type(value)} - {value}\n"
+        #     print(arg_string)  # Print to console
+        #     type_string += arg_string  # Add to GUI update string
 
-        # Update GUI with types and values
-        self.update_results(type_string)
+        # # Update GUI with types and values
+        # self.update_results(type_string)
 
     def validate_eff_data(self, values):
         try:
