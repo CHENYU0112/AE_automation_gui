@@ -6,27 +6,23 @@ import pyvisa
 import time
 
 import xlsxwriter
-
-from io import StringIO
-
+from config import *
 from power_supply import *
 
 
 
-# Global stop flag
-_stop_flag = False
+#from measure_eff_config import input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_voltage, \
 
-def set_stop_flag():
-    global _stop_flag
-    _stop_flag = True
+    #output_shunt_max_current, power_supply_GPIB_address, data_logger_GPIB_address, \
 
-def reset_stop_flag():
-    global _stop_flag
-    _stop_flag = False
+    #electronic_load_GPIB_address, lecory_usb_address, input_v_ch, input_i_ch, output_v_ch, output_i_ch, VCC, temp_type, \
 
-def get_stop_flag():
-    global _stop_flag
-    return _stop_flag
+    #Max_input_voltage, Max_input_current, Max_output_voltage, Max_load_current, output_file, \
+
+    #Input_V, Input_I, Low_load_start, Low_load_step, Low_load_stop, High_load_stop, High_load_step, low_load_timing,\
+
+    #high_load_timing
+
 
 
 def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_voltage, output_shunt_max_current,
@@ -35,9 +31,10 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
 
         input_v_ch, input_i_ch, output_v_ch, output_i_ch, vcc_ch, ldo_ch,  Max_input_voltage, Max_input_current,
 
-        Max_load_current, output_file, Input_V, Input_I, Low_load_start, Low_load_step, Low_load_stop, High_load_stop,
+        Max_load_current, output_file, Input_V, Input_I, Low_load_start, Low_load_step, Low_load_stop,High_load_start, High_load_stop,
 
         High_load_step, low_load_timing, high_load_timing, FRE):
+    
 
         
     print(f"""
@@ -80,7 +77,7 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
             - Stop: {Low_load_stop}
 
         High Load Sweep:
-            - Start: (implicitly defined by Low_load_stop)
+            - Start: {High_load_start}
             - Step: {High_load_step}
             - Stop: {High_load_stop}
 
@@ -314,10 +311,10 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
 
                 #lecroy.write("MEASUREMENT:MEAS1:SOURCE CH1") # set the source to ch1
 
-           
- 
-            output = StringIO()
-            workbook = xlsxwriter.Workbook(output)
+
+
+            workbook = xlsxwriter.Workbook(output_file + '.xlsx')  # Name this file for if needed
+
             worksheet = workbook.add_worksheet()
 
 
@@ -370,10 +367,8 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
 
             for input_voltage_setpoint in Input_V:  # Set input voltage range,loops the voltage
                 
-                if get_stop_flag():
-                    print("Test stopped by user")
-                    return
                 
+
                 index = index + 1
 
                 #power_supply.write('SOUR:VOLT ' + str(input_voltage_setpoint))
@@ -425,16 +420,16 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
                 for output_current_setpoint in np.arange(Low_load_start, Low_load_stop,
 
                                                         Low_load_step):  # Set output current range, loops the load current
-
                     
+                    if get_stop_flag():
+                        print("Test stopped by user")
+                        break
+
                     index = index + 1
 
                     electronic_load.write('MODE CCL')
 
                     electronic_load.write('CURR:STAT:L1 ', str(output_current_setpoint))
-                    
-                    ranges = electronic_load.query('CURR:RANG?')
-                    
 
 
 
@@ -658,12 +653,13 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
 
 
 
-                for output_current_setpoint in np.arange(Low_load_stop, High_load_stop + 0.002,
+                for output_current_setpoint in np.arange(High_load_start, High_load_stop + 0.002,
 
                                                         High_load_step):  # Set output current range, loops the load current
                     if get_stop_flag():
                         print("Test stopped by user")
-                        return
+                        break
+                    print(output_current_setpoint)
                     index = index + 1
 
                     electronic_load.write('MODE CCH')
@@ -1175,10 +1171,7 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
 
         print("Error: check I/O values")
 
-    workbook.close()
-
-    # Save to file
-    with open(f"{output_file}.xlsx", "wb") as f:
-        f.write(output.getvalue())
-
-    # Return the StringIO content
+def calculate_total_steps(Input_V, Low_load_start, Low_load_stop, Low_load_step, High_load_stop, High_load_step):
+    low_load_steps = len(np.arange(Low_load_start, Low_load_stop, Low_load_step))
+    high_load_steps = len(np.arange(Low_load_stop, High_load_stop + 0.002, High_load_step))
+    return len(Input_V) * (low_load_steps + high_load_steps)

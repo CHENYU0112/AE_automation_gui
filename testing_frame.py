@@ -2,6 +2,9 @@ import tkinter as tk
 from tkinter import ttk
 from efficiency_tab import EfficiencyTab
 
+from config import *
+
+
 class TestingFrame(tk.Frame):
     def __init__(self, parent, instrument_manager, setting_frame):
         super().__init__(parent, bd=4, relief=tk.RIDGE, bg='gray')

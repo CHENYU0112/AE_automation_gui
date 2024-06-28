@@ -10,6 +10,10 @@ from efficiency_test import EfficiencyTest
 from measure_eff_Tek import *
 from config import *
 
+
+
+
+
 class EfficiencyTab(tk.Frame):
     def __init__(self, parent, instrument_manager, setting_frame):
         super().__init__(parent)
@@ -58,7 +62,7 @@ class EfficiencyTab(tk.Frame):
             self.redirect_output()
             self.test_thread = threading.Thread(target=self.run_test_thread, args=(settings,))
             self.test_thread.start()
-
+            reset_stop_flag()
             self.after(100, self.check_test_thread)
             self.after(100, self.update_output)
 
@@ -92,11 +96,14 @@ class EfficiencyTab(tk.Frame):
                 self.setup_progress_bar(validated_settings)
                 self.start_time = time.time()
                 self.after(0, self.update_progress_by_time)  # Start progress updates
+                _stop_flag=False
                 eff(**validated_settings)
-                if get_stop_flag ==True:
+                self.update_results(f"Stop flag set to: {get_stop_flag()}")
+    
+                if get_stop_flag():
+                    self.update_results("Test stopped!")
+                else:
                     self.update_results("Test completed successfully!")
-                else :
-                    self.update_results("Test stoppped!")
             else:
                 self.update_results("Invalid settings. Please check the input values.")
         except Exception as e:
@@ -153,7 +160,9 @@ class EfficiencyTab(tk.Frame):
       
         self.test_running = False
         self.update_results("Test stopped by user.")
+        set_stop_flag()
         
+
         self.start_button.config(state=tk.NORMAL)
         self.stop_button.config(state=tk.DISABLED)
         self.progress_var.set(100)  # Set progress to 100% when stopped
@@ -214,7 +223,7 @@ class EfficiencyTab(tk.Frame):
             - Stop: {validated_settings['Low_load_stop']}
 
         High Load Sweep:
-            - Start: (implicitly defined by Low_load_stop)
+            - Start:{validated_settings['High_load_start']}
             - Step: {validated_settings['High_load_step']}
             - Stop: {validated_settings['High_load_stop']}
 
@@ -298,6 +307,7 @@ class EfficiencyTab(tk.Frame):
             Low_load_stop = values['low_load']['stop']
             
             # Extract and validate high load sweep
+            High_load_start = values['high_load']['start']
             High_load_stop = values['high_load']['stop']
             High_load_step = values['high_load']['step']
             
@@ -327,6 +337,7 @@ class EfficiencyTab(tk.Frame):
                 'Low_load_start': Low_load_start,
                 'Low_load_step': Low_load_step,
                 'Low_load_stop': Low_load_stop,
+                'High_load_start': High_load_start,
                 'High_load_stop': High_load_stop,
                 'High_load_step': High_load_step,
                 'low_load_timing': low_load_timing,
