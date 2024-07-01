@@ -6,7 +6,7 @@ import sys
 import time
 import numpy as np
 from io import StringIO
-from efficiency_test import EfficiencyTest
+
 from gui.testing_frame.measure_eff_Tek import *
 from config import *
 
@@ -19,7 +19,7 @@ class EfficiencyTab(tk.Frame):
         super().__init__(parent)
         self.instrument_manager = instrument_manager
         self.setting_frame = setting_frame
-        self.efficiency_test = EfficiencyTest(instrument_manager)
+       
         self.test_running = False
         self.output_queue = queue.Queue()
         self.create_widgets()
