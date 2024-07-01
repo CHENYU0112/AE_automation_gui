@@ -1,19 +1,19 @@
 # config.py
 
 # Global stop flag
-_stop_flag = False
+stop_flag = False
 
 def set_stop_flag():
-    global _stop_flag
-    _stop_flag = True
+    global stop_flag
+    stop_flag = True
 
 def reset_stop_flag():
-    global _stop_flag
-    _stop_flag = False
+    global stop_flag
+    stop_flag = False
 
 def get_stop_flag():
-    global _stop_flag
-    return _stop_flag
+    global stop_flag
+    return stop_flag
 
 # GUI Constants
 WINDOW_SIZE = "2000x1200"
@@ -45,12 +45,18 @@ POWER_SUPPLY_CHANNELS = [' 1', ' 2', ' 3', ' 4']
 # IC Options
 IC_OPTIONS = ['DEFAULT', 'TDA48820A']
 
+# Test Types
+TEST_TYPES = ['Efficiency','Transient']
+
 # Default Settings
 DEFAULT_SETTINGS = {
     'power_supply': {
         'vin': 12,
         'iin': 5,
-        'channel': ' 1'
+        'vin_channel': ' 1',
+        'vcc': 3.3, 
+        'icc': 5,  
+        'vcc_channel': ' 2'  
     },
     'daq': {
         'ch1': 'input V',
@@ -82,7 +88,10 @@ TDA48820A_SETTINGS = {
     'power_supply': {
         'vin': 12,
         'iin': 3,
-        'channel': ' 1'
+        'vin_channel': ' 1',
+        'vcc': 3,  
+        'icc': 5,  
+        'vcc_channel': ' 2'  
     },
     'daq': {
         'ch1': 'input V',
