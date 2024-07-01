@@ -1,5 +1,20 @@
 # config.py
 
+# Global stop flag
+_stop_flag = False
+
+def set_stop_flag():
+    global _stop_flag
+    _stop_flag = True
+
+def reset_stop_flag():
+    global _stop_flag
+    _stop_flag = False
+
+def get_stop_flag():
+    global _stop_flag
+    return _stop_flag
+
 # GUI Constants
 WINDOW_SIZE = "2000x1200"
 FONT_NORMAL = ("times new roman", 12)
@@ -27,11 +42,14 @@ DAQ_OPTIONS = ['input V', 'input I', 'output V', 'output I', 'Vcc', 'LDO']
 # Power Supply Channels
 POWER_SUPPLY_CHANNELS = [' 1', ' 2', ' 3', ' 4']
 
+# IC Options
+IC_OPTIONS = ['DEFAULT', 'TDA48820A']
+
 # Default Settings
 DEFAULT_SETTINGS = {
     'power_supply': {
         'vin': 12,
-        'iin': 2,
+        'iin': 5,
         'channel': ' 1'
     },
     'daq': {
@@ -43,15 +61,13 @@ DEFAULT_SETTINGS = {
         'ch6': 'LDO'
     },
     'load': {
-        'low_load': {'start': 0.1, 'step': 0.1, 'stop': 1.0},
-        'high_load': {'start': 1.0, 'step': 0.5, 'stop': 5.0},
-        'low_load_delay': 3, 
-        'high_load_delay': 3  
+        'low_load': {'start': 0.1, 'step': 0.5, 'stop': 1.0, 'delay': 1},
+        'high_load': {'start': 2.0, 'step': 1.0, 'stop': 5.0, 'delay': 1}
     },
     'protection': {
         'max_vin': 16,
-        'max_iin': 3,
-        'max_iout': 6
+        'max_iin': 6,
+        'max_iout': 20
     },
     'current_shunt': {
         'input_max_v': 0.1,
@@ -61,9 +77,45 @@ DEFAULT_SETTINGS = {
     }
 }
 
+# TDA48820A Settings
+TDA48820A_SETTINGS = {
+    'power_supply': {
+        'vin': 12,
+        'iin': 3,
+        'channel': ' 1'
+    },
+    'daq': {
+        'ch1': 'input V',
+        'ch2': 'input I',
+        'ch3': 'output V',
+        'ch4': 'output I',
+        'ch5': 'Vcc',
+        'ch6': 'LDO'
+    },
+    'load': {
+        'low_load': {'start': 0.1, 'step': 0.2, 'stop': 1.0, 'delay': 1},
+        'high_load': {'start': 1.0, 'step': 0.5, 'stop': 3.0, 'delay': 1}
+    },
+    'protection': {
+        'max_vin': 14,
+        'max_iin': 4,
+        'max_iout': 15
+    },
+    'current_shunt': {
+        'input_max_v': 0.1,
+        'input_max_i': 5,
+        'output_max_v': 0.1,
+        'output_max_i': 20
+    }
+}
+
+# IC Default Settings
+IC_DEFAULT_SETTINGS = {
+    'DEFAULT': DEFAULT_SETTINGS,
+    'TDA48820A': TDA48820A_SETTINGS
+}
+
 # Test Configuration
-
-
 TEST_CONFIG = {
     'input_shunt_max_voltage': 0.1,
     'input_shunt_max_current': 5,

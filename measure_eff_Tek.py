@@ -6,9 +6,13 @@ import pyvisa
 import time
 
 import xlsxwriter
+<<<<<<< HEAD
 
 from io import StringIO
 
+=======
+from config import *
+>>>>>>> weekly_update
 from power_supply import *
 
 
@@ -35,62 +39,12 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
 
         input_v_ch, input_i_ch, output_v_ch, output_i_ch, vcc_ch, ldo_ch,  Max_input_voltage, Max_input_current,
 
-        Max_load_current, output_file, Input_V, Input_I, Low_load_start, Low_load_step, Low_load_stop, High_load_stop,
+        Max_load_current, output_file, Input_V, Input_I, Low_load_start, Low_load_step, Low_load_stop,High_load_start, High_load_stop,
 
         High_load_step, low_load_timing, high_load_timing, FRE):
 
         
-    print(f"""
-        Input Shunt Parameters:
-            - Max Voltage: {input_shunt_max_voltage}
-            - Max Current: {input_shunt_max_current}
 
-        Output Shunt Parameters:
-            - Max Voltage: {output_shunt_max_voltage}
-            - Max Current: {output_shunt_max_current}
-
-        GPIB Addresses:
-            - Power Supply: {power_supply_GPIB_address}
-            - Data Logger: {data_logger_GPIB_address}
-            - Electronic Load: {electronic_load_GPIB_address}
-            - LeCroy: {lecory_usb_address}
-
-        Channel Assignments:
-            - Input Voltage: {input_v_ch}
-            - Input Current: {input_i_ch}
-            - Output Voltage: {output_v_ch}
-            - Output Current: {output_i_ch}
-            - Vcc: {vcc_ch}
-            - LDO: {ldo_ch}
-
-        Maximum Ratings:
-            - Input Voltage: {Max_input_voltage}
-            - Input Current: {Max_input_current}
-            - Load Current: {Max_load_current}
-
-        Output File: {output_file}
-
-        Load Sweep Parameters:
-            - Input Voltage: {Input_V}
-            - Input Current: {Input_I}
-
-        Low Load Sweep:
-            - Start: {Low_load_start}
-            - Step: {Low_load_step}
-            - Stop: {Low_load_stop}
-
-        High Load Sweep:
-            - Start: (implicitly defined by Low_load_stop)
-            - Step: {High_load_step}
-            - Stop: {High_load_stop}
-
-        Timing Parameters:
-            - Low Load: {low_load_timing}
-            - High Load: {high_load_timing}
-
-        Frequency: {FRE}
-        """)
-    #FRE = 1
 
     print("FRE = ", FRE)
 
@@ -369,9 +323,15 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
 
 
             for input_voltage_setpoint in Input_V:  # Set input voltage range,loops the voltage
+<<<<<<< HEAD
                 if get_stop_flag():
                     print("Test stopped by user")
                     return
+=======
+                
+                
+
+>>>>>>> weekly_update
                 index = index + 1
 
                 #power_supply.write('SOUR:VOLT ' + str(input_voltage_setpoint))
@@ -423,9 +383,17 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
                 for output_current_setpoint in np.arange(Low_load_start, Low_load_stop,
 
                                                         Low_load_step):  # Set output current range, loops the load current
+<<<<<<< HEAD
                     if get_stop_flag():
                         print("Test stopped by user")
                         return
+=======
+                    
+                    if get_stop_flag():
+                        print("Test stopped by user")
+                        break
+
+>>>>>>> weekly_update
                     index = index + 1
 
                     electronic_load.write('MODE CCL')
@@ -657,12 +625,17 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
 
 
 
-                for output_current_setpoint in np.arange(Low_load_stop, High_load_stop + 0.002,
+                for output_current_setpoint in np.arange(High_load_start, High_load_stop + 0.002,
 
                                                         High_load_step):  # Set output current range, loops the load current
                     if get_stop_flag():
                         print("Test stopped by user")
+<<<<<<< HEAD
                         return
+=======
+                        break
+                    print(output_current_setpoint)
+>>>>>>> weekly_update
                     index = index + 1
 
                     electronic_load.write('MODE CCH')

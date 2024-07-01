@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+import os
 from instrument_manager import InstrumentManager
 from setting_frame import SettingFrame
 from testing_frame import TestingFrame
@@ -66,13 +67,15 @@ class MainApplication(tk.Frame):
 
     def on_closing(self):
         if messagebox.askokcancel("Quit", "Do you want to quit?"):
-            print("Closing application...")  # Debug print
+            
             try:
                 self.instrument_manager.disconnect_all()
             except Exception as e:
                 print(f"Error during disconnect: {e}")  # Debug print
             self.parent.quit()
             self.parent.destroy()
+            print("Closing application...")  # Debug print
+            os._exit(0)
 
 def main():
     root = tk.Tk()
@@ -83,3 +86,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

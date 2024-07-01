@@ -7,8 +7,16 @@ import time
 import numpy as np
 from io import StringIO
 from efficiency_test import EfficiencyTest
+<<<<<<< HEAD
 from measure_eff_Tek import eff, set_stop_flag, reset_stop_flag,get_stop_flag
+=======
+from measure_eff_Tek import *
+>>>>>>> weekly_update
 from config import *
+
+
+
+
 
 class EfficiencyTab(tk.Frame):
     def __init__(self, parent, instrument_manager, setting_frame):
@@ -25,6 +33,7 @@ class EfficiencyTab(tk.Frame):
         self.create_results_area()
         self.create_excel_output_area()
 
+
     def create_control_frame(self):
         control_frame = tk.Frame(self, bd=2, relief=tk.RIDGE)
         control_frame.pack(pady=10, padx=10, fill=tk.X)
@@ -38,8 +47,9 @@ class EfficiencyTab(tk.Frame):
         self.progress_var = tk.DoubleVar()
         self.progress_bar = ttk.Progressbar(control_frame, variable=self.progress_var, maximum=100)
         self.progress_bar.pack(side=tk.LEFT, padx=5, expand=True, fill=tk.X)
-
+        
     def create_results_area(self):
+<<<<<<< HEAD
         results_frame = tk.Frame(self)
         results_frame.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, pady=10, padx=10)
 
@@ -71,6 +81,19 @@ class EfficiencyTab(tk.Frame):
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
         self.excel_text.config(yscrollcommand=scrollbar.set, state=tk.DISABLED)
+=======
+        results_frame = tk.Frame(self, bd=2, relief=tk.RIDGE)
+        results_frame.pack(pady=10, padx=10, fill=tk.BOTH, expand=True)  # Added expand=True
+
+        # Increased height and width for both text widgets
+        self.results_text = tk.Text(results_frame, height=30, width=40)
+        self.results_text.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, pady=10, padx=10)
+
+        self.output_text = tk.Text(results_frame, height=30, width=80)
+        self.output_text.pack(side=tk.RIGHT, expand=True, fill=tk.BOTH, pady=10, padx=10)
+
+
+>>>>>>> weekly_update
         
     def start_efficiency_test(self):
         if self.test_running:
@@ -89,8 +112,13 @@ class EfficiencyTab(tk.Frame):
             self.redirect_output()
             self.test_thread = threading.Thread(target=self.run_test_thread, args=(settings,))
             self.test_thread.start()
+<<<<<<< HEAD
 
           #  self.after(100, self.check_test_thread)
+=======
+            reset_stop_flag()
+            self.after(100, self.check_test_thread)
+>>>>>>> weekly_update
             self.after(100, self.update_output)
 
         except Exception as e:
@@ -122,9 +150,23 @@ class EfficiencyTab(tk.Frame):
                 self.print_validated_settings(validated_settings)
                 self.setup_progress_bar(validated_settings)
                 self.start_time = time.time()
+<<<<<<< HEAD
                 self.after(0, self.update_progress_by_time)                   
                 eff(**validated_settings)
                 self.update_results("Test completed successfully!")
+=======
+                self.after(0, self.update_progress_by_time)  # Start progress updates
+                _stop_flag=False
+                eff(**validated_settings)
+                self.update_results(f"Stop flag set to: {get_stop_flag()}")
+    
+                if get_stop_flag():
+                    self.update_results("Test stopped!")
+                else:
+                    self.update_results("Test completed successfully!")
+            else:
+                self.update_results("Invalid settings. Please check the input values.")
+>>>>>>> weekly_update
         except Exception as e:
             self.update_results(f"Error during test: {str(e)}")
         finally:
@@ -179,9 +221,16 @@ class EfficiencyTab(tk.Frame):
     def stop_efficiency_test(self):
         if not self.test_running:
             return
+      
         self.test_running = False
         self.update_results("Test stopped by user.")
+<<<<<<< HEAD
         set_stop_flag()  # Set the global stop flag
+=======
+        set_stop_flag()
+        
+
+>>>>>>> weekly_update
         self.start_button.config(state=tk.NORMAL)
         self.stop_button.config(state=tk.DISABLED)
         self.progress_var.set(100)  # Set progress to 100% when stopped
@@ -251,7 +300,7 @@ class EfficiencyTab(tk.Frame):
             - Stop: {validated_settings['Low_load_stop']}
 
         High Load Sweep:
-            - Start: (implicitly defined by Low_load_stop)
+            - Start:{validated_settings['High_load_start']}
             - Step: {validated_settings['High_load_step']}
             - Stop: {validated_settings['High_load_stop']}
 
@@ -261,22 +310,16 @@ class EfficiencyTab(tk.Frame):
 
         Frequency: {validated_settings['FRE']}
         """
-
-        # Print to console
-        print(print_string)
-
-        # Update GUI
         self.update_results(print_string)
-
         # Print argument name, data type, and value
-        type_string = "Argument Types and Values:\n"
-        for arg, value in validated_settings.items():
-            arg_string = f"{arg}: {type(value)} - {value}\n"
-            print(arg_string)  # Print to console
-            type_string += arg_string  # Add to GUI update string
+        # type_string = "Argument Types and Values:\n"
+        # for arg, value in validated_settings.items():
+        #     arg_string = f"{arg}: {type(value)} - {value}\n"
+        #     print(arg_string)  # Print to console
+        #     type_string += arg_string  # Add to GUI update string
 
-        # Update GUI with types and values
-        self.update_results(type_string)
+        # # Update GUI with types and values
+        # self.update_results(type_string)
 
     def validate_eff_data(self, values):
         try:
@@ -335,6 +378,7 @@ class EfficiencyTab(tk.Frame):
             Low_load_stop = values['low_load']['stop']
             
             # Extract and validate high load sweep
+            High_load_start = values['high_load']['start']
             High_load_stop = values['high_load']['stop']
             High_load_step = values['high_load']['step']
             
@@ -364,6 +408,7 @@ class EfficiencyTab(tk.Frame):
                 'Low_load_start': Low_load_start,
                 'Low_load_step': Low_load_step,
                 'Low_load_stop': Low_load_stop,
+                'High_load_start': High_load_start,
                 'High_load_stop': High_load_stop,
                 'High_load_step': High_load_step,
                 'low_load_timing': low_load_timing,

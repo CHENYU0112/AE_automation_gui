@@ -14,6 +14,7 @@ class SettingFrame(tk.Frame):
 
     def create_widgets(self):
         self.create_title()
+        self.create_ic_selection_frame()  # New method to create IC selectio
         self.create_power_supply_frame()
         self.create_daq_frame()
         self.create_load_frame()
@@ -24,10 +25,25 @@ class SettingFrame(tk.Frame):
     def create_title(self):
         title = tk.Label(self, text="Setting", font=("times new roman", 20, "bold"), bg='black', fg="white")
         title.pack(fill=tk.X, padx=5, pady=5)
-
+        
+    def create_ic_selection_frame(self):
+        frame = tk.Frame(self, bd=4, relief=tk.RIDGE, bg='white')
+        frame.place(x=25, y=50, width=450, height=40)
+        
+        tk.Label(frame, text="IC", font=FONT_BOLD, bg='yellow', fg="black").place(x=5, y=5)
+        self.ic_combo = ttk.Combobox(frame, width=20, values=IC_OPTIONS)
+        self.ic_combo.place(x=100, y=5)
+        self.ic_combo.set('DEFAULT')  # Set default value
+        self.ic_combo.bind("<<ComboboxSelected>>", self.on_ic_selected)
+        
+        
+    def on_ic_selected(self, event):
+        selected_ic = self.ic_combo.get()
+        self.set_default_values(selected_ic)
+        
     def create_power_supply_frame(self):
         frame = tk.Frame(self, bd=4, relief=tk.RIDGE, bg='white')
-        frame.place(x=25, y=60, width=450, height=150)
+        frame.place(x=25, y=100, width=450, height=150)
         
         tk.Label(frame, text="Power_Supply", font=FONT_BOLD, bg='yellow', fg="black").place(x=5, y=5)
         tk.Label(frame, text=self.instrument_manager.instruments['supply'], font=FONT_BOLD, bg='white', fg="black").place(x=115, y=5)
@@ -41,7 +57,7 @@ class SettingFrame(tk.Frame):
 
     def create_daq_frame(self):
         frame = tk.Frame(self, bd=4, relief=tk.RIDGE, bg='white')
-        frame.place(x=25, y=220, width=450, height=220)
+        frame.place(x=25, y=260, width=450, height=220)
         
         tk.Label(frame, text="DAQ", font=FONT_BOLD, bg='yellow', fg="black").place(x=5, y=5)
         tk.Label(frame, text=self.instrument_manager.instruments['DAQ'], font=FONT_BOLD, bg='white', fg="black").place(x=115, y=5)
@@ -56,7 +72,7 @@ class SettingFrame(tk.Frame):
 
     def create_load_frame(self):
         frame = tk.Frame(self, bd=4, relief=tk.RIDGE, bg='white')
-        frame.place(x=25, y=450, width=450, height=200)  # Increased height to accommodate new entries
+        frame.place(x=25, y=490, width=450, height=200)  # Increased height to accommodate new entries
         
         tk.Label(frame, text="E Load", font=FONT_BOLD, bg='yellow', fg="black").place(x=5, y=5)
         tk.Label(frame, text=self.instrument_manager.instruments['load'], font=FONT_BOLD, bg='white', fg="black").place(x=110, y=5)
@@ -78,7 +94,7 @@ class SettingFrame(tk.Frame):
 
     def create_protection_frame(self):
         frame = tk.Frame(self, bd=4, relief=tk.RIDGE, bg='white')
-        frame.place(x=25, y=660, width=450, height=150)
+        frame.place(x=25, y=700, width=450, height=150)
         
         tk.Label(frame, text="Protection", font=FONT_BOLD, bg='yellow', fg="black").place(x=5, y=5)
 
@@ -88,7 +104,7 @@ class SettingFrame(tk.Frame):
 
     def create_current_shunt_frame(self):
         frame = tk.Frame(self, bd=4, relief=tk.RIDGE, bg='white')
-        frame.place(x=25, y=820, width=450, height=150)
+        frame.place(x=25, y=860, width=450, height=150)
         
         tk.Label(frame, text="Current Shunt ", font=FONT_BOLD, bg='yellow', fg="black").place(x=5, y=5)
 
@@ -104,7 +120,7 @@ class SettingFrame(tk.Frame):
 
     def create_button_frame(self):
         frame = tk.Frame(self, bd=4, relief=tk.RIDGE, bg='gray', borderwidth=0)
-        frame.place(x=25, y=980, width=450, height=60)
+        frame.place(x=25, y=1020, width=450, height=60)
 
         self.reset_button = tk.Button(frame, text="reset", bg='white', fg="black", padx=20, pady=5,
                   font=BUTTON_FONT, command=self.reset_fields)
@@ -128,38 +144,49 @@ class SettingFrame(tk.Frame):
     def validate_entry(P):
         return P == "" or P == "." or (P.count('.') <= 1 and P.replace('.', '').isdigit())
 
-    def set_default_values(self):
+    def set_default_values(self, ic='DEFAULT'):
+        default_settings = IC_DEFAULT_SETTINGS.get(ic, DEFAULT_SETTINGS)
+        
         # Power Supply
-        self.vin.insert(0, str(DEFAULT_SETTINGS['power_supply']['vin']))
-        self.iin.insert(0, str(DEFAULT_SETTINGS['power_supply']['iin']))
-        self.pw_ch.set(DEFAULT_SETTINGS['power_supply']['channel'])
+        self.vin.delete(0, tk.END)
+        self.vin.insert(0, str(default_settings['power_supply']['vin']))
+        self.iin.delete(0, tk.END)
+        self.iin.insert(0, str(default_settings['power_supply']['iin']))
+        self.pw_ch.set(default_settings['power_supply']['channel'])
 
         # DAQ
         for i, combo in enumerate(self.daq_channels, 1):
-            combo.set(DEFAULT_SETTINGS['daq'][f'ch{i}'])
+            combo.set(default_settings['daq'][f'ch{i}'])
 
         # Load
         load_params = ['start', 'step', 'stop', 'delay']
         for i, entry in enumerate(self.low_load_entries):
             key = load_params[i]
-            value = DEFAULT_SETTINGS['load']['low_load'].get(key, 1)  # Default to 1 if not specified
+            value = default_settings['load']['low_load'].get(key, 1)
+            entry.delete(0, tk.END)
             entry.insert(0, str(value))
         for i, entry in enumerate(self.high_load_entries):
             key = load_params[i]
-            value = DEFAULT_SETTINGS['load']['high_load'].get(key, 1)  # Default to 1 if not specified
+            value = default_settings['load']['high_load'].get(key, 1)
+            entry.delete(0, tk.END)
             entry.insert(0, str(value))
 
         # Protection
-        self.max_vin.insert(0, str(DEFAULT_SETTINGS['protection']['max_vin']))
-        self.max_iin.insert(0, str(DEFAULT_SETTINGS['protection']['max_iin']))
-        self.max_iout.insert(0, str(DEFAULT_SETTINGS['protection']['max_iout']))
+        self.max_vin.delete(0, tk.END)
+        self.max_vin.insert(0, str(default_settings['protection']['max_vin']))
+        self.max_iin.delete(0, tk.END)
+        self.max_iin.insert(0, str(default_settings['protection']['max_iin']))
+        self.max_iout.delete(0, tk.END)
+        self.max_iout.insert(0, str(default_settings['protection']['max_iout']))
 
         # Current Shunt Settings
-        shunt_values = DEFAULT_SETTINGS['current_shunt'].values()
+        shunt_values = default_settings['current_shunt'].values()
         for entry, value in zip(self.shunt_entries, shunt_values):
+            entry.delete(0, tk.END)
             entry.insert(0, str(value))
 
     def reset_fields(self):
+        
         def clear_widget(widget):
             if isinstance(widget, tk.Entry):
                 widget.delete(0, tk.END)
@@ -170,9 +197,11 @@ class SettingFrame(tk.Frame):
             
             for child in widget.winfo_children():
                 clear_widget(child)
-
+        selected_ic =self.ic_combo.get()
+      
         clear_widget(self)
-        self.set_default_values()
+        self.ic_combo.set(selected_ic)
+        self.set_default_values(selected_ic)
         self.unlock_frame()
         self.parent.lock_testing_frame()
 
@@ -217,6 +246,7 @@ class SettingFrame(tk.Frame):
         output_shunt_max_current = safe_float(self.shunt_entries[3].get(), "Output Shunt Max Current")
 
         values = {
+            'selected_ic' : self.ic_combo.get(),
             'input_v': input_v,
             'input_i': input_i,
             'power_supply_channel': power_supply_channel,
