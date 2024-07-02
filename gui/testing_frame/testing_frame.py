@@ -28,16 +28,6 @@ class TestingFrame(tk.Frame):
         self.efficiency_tab = EfficiencyTab(self.notebook, self.instrument_manager, self.setting_frame)
         self.notebook.add(self.efficiency_tab, text="Efficiency")
 
-        # Placeholder for future tabs
-        # self.create_other_tabs()
-
-    def create_other_tabs(self):
-        # Placeholder method for adding other testing tabs in the future
-        # For example:
-        # self.regulation_tab = RegulationTab(self.notebook, self.instrument_manager, self.setting_frame)
-        # self.notebook.add(self.regulation_tab, text="Regulation")
-        pass
-
     def lock_frame(self):
         self.is_locked = True
         # Disable all tabs

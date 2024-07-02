@@ -63,7 +63,7 @@ class SettingFrame(tk.Frame):
             raise ValueError(f"Unknown test type: {test_type}")
 
         self.current_test_frame.place(x=25, y=100, width=470, height=920)
-        self.set_default_values()
+        self.set_default_values(selected_ic)
 
     def create_button_frame(self):
         frame = tk.Frame(self, bd=4, relief=tk.RIDGE, bg='gray', borderwidth=0)
@@ -88,14 +88,16 @@ class SettingFrame(tk.Frame):
         self.set_default_values(selected_ic)
         self.unlock_frame()
         self.parent.lock_testing_frame()
+        if self.current_test_frame:
+            self.current_test_frame.set_default_values(IC_DEFAULT_SETTINGS.get(selected_ic, DEFAULT_SETTINGS))
 
     def set_values(self):
         if not self.current_test_frame:
             messagebox.showerror("Error", "No test frame selected")
             return
 
-        if self.current_test_frame.validate_values():
-            values = self.current_test_frame.get_values()
+        if self.current_test_frame.validate_values(self.current_test_frame.get_values()):
+            print(self.current_test_frame.get_values())
             # Here you can do something with the values, like saving them or passing them to another part of your application
             messagebox.showinfo("Info", "Values set successfully!")
             self.lock_frame()

@@ -6,20 +6,15 @@ import sys
 import time
 import numpy as np
 from io import StringIO
-
-from gui.testing_frame.measure_eff_Tek import *
+from ..setting_frame.EfficiencyTest import EfficiencyTestFrame
+from .measure_eff_Tek import *
 from config import *
-
-
-
-
 
 class EfficiencyTab(tk.Frame):
     def __init__(self, parent, instrument_manager, setting_frame):
         super().__init__(parent)
         self.instrument_manager = instrument_manager
         self.setting_frame = setting_frame
-       
         self.test_running = False
         self.output_queue = queue.Queue()
         self.create_widgets()
@@ -62,15 +57,15 @@ class EfficiencyTab(tk.Frame):
             return
 
         try:
-            settings = self.setting_frame.get_all_values()
+            settings = self.setting_frame.current_test_frame.get_values()
+            validated_settings = self.validate_eff_data(settings)
             
-
             self.test_running = True
             self.start_button.config(state=tk.DISABLED)
             self.stop_button.config(state=tk.NORMAL)
 
             self.redirect_output()
-            self.test_thread = threading.Thread(target=self.run_test_thread, args=(settings,))
+            self.test_thread = threading.Thread(target=self.run_test_thread, args=(validated_settings,))
             self.test_thread.start()
             reset_stop_flag()
             self.after(100, self.check_test_thread)
@@ -81,6 +76,26 @@ class EfficiencyTab(tk.Frame):
             self.test_running = False
             self.start_button.config(state=tk.NORMAL)
             self.stop_button.config(state=tk.DISABLED)
+
+    def run_test_thread(self, validated_settings):
+        try:
+            self.setup_progress_bar(validated_settings)
+            self.start_time = time.time()
+            self.after(0, self.update_progress_by_time)  # Start progress updates
+            _stop_flag=False
+            eff(**validated_settings)
+            self.update_results(f"Stop flag set to: {get_stop_flag()}")
+
+            if get_stop_flag():
+                self.update_results("Test stopped!")
+            else:
+                self.update_results("Test completed successfully!")
+        except Exception as e:
+            self.update_results(f"Error during test: {str(e)}")
+        finally:
+            self.test_running = False
+            self.restore_output()
+            self.progress_var.set(100)  # Ensure progress bar is full at the end
     def redirect_output(self):
         self.old_stdout = sys.stdout
         sys.stdout = StringIO()
@@ -98,30 +113,7 @@ class EfficiencyTab(tk.Frame):
                 sys.stdout.seek(0)
             self.after(100, self.update_output)
             
-    def run_test_thread(self, settings):
-        try:
-            validated_settings = self.validate_eff_data(settings)
-            if validated_settings:
-                self.print_validated_settings(validated_settings)
-                self.setup_progress_bar(validated_settings)
-                self.start_time = time.time()
-                self.after(0, self.update_progress_by_time)  # Start progress updates
-                _stop_flag=False
-                eff(**validated_settings)
-                self.update_results(f"Stop flag set to: {get_stop_flag()}")
-    
-                if get_stop_flag():
-                    self.update_results("Test stopped!")
-                else:
-                    self.update_results("Test completed successfully!")
-            else:
-                self.update_results("Invalid settings. Please check the input values.")
-        except Exception as e:
-            self.update_results(f"Error during test: {str(e)}")
-        finally:
-            self.test_running = False
-            self.restore_output()
-            self.progress_var.set(100)  # Ensure progress bar is full at the end
+
             
             
     def setup_progress_bar(self, settings):
@@ -372,9 +364,9 @@ class EfficiencyTab(tk.Frame):
             raise ValueError(f"Missing required parameter: {str(e)}")
         except Exception as e:
             raise ValueError(f"Error in validating data: {str(e)}")
-            
+                
 
-            
+                
 
 
 

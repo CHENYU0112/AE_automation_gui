@@ -210,40 +210,55 @@ class EfficiencyTestFrame(TestFrame):
             entry.insert(0, str(value))
 
     def get_values(self):
+        def safe_float(value, field_name):
+            try:
+                return float(value) if value else 0
+            except ValueError:
+                raise ValueError(f"Invalid input for {field_name}")
+
+        input_v = safe_float(self.vin.get(), "Input Voltage (Input_V)")
+        input_i = safe_float(self.iin.get(), "Input Current (Input_I)")
+        power_supply_channel = self.pw_ch_vin.get()
+        daq_channels = [combo.get() for combo in self.daq_channels]
+        max_vin = safe_float(self.max_vin.get(), "Protective Maximum Input Voltage (MAX_Vin)")
+        max_iin = safe_float(self.max_iin.get(), "Protective Maximum Input Current (MAX_Iin)")
+        max_iout = safe_float(self.max_iout.get(), "Protective Maximum Output Current (MAX_Iout)")
+
+        load_params = ['start', 'step', 'stop', 'delay']
+        low_load_values = [safe_float(entry.get(), f"Low Load {param.capitalize()}") for entry, param in zip(self.low_load_entries, load_params)]
+        high_load_values = [safe_float(entry.get(), f"High Load {param.capitalize()}") for entry, param in zip(self.high_load_entries, load_params)]
+
+        input_shunt_max_voltage = safe_float(self.shunt_entries[0].get(), "Input Shunt Max Voltage")
+        input_shunt_max_current = safe_float(self.shunt_entries[1].get(), "Input Shunt Max Current")
+        output_shunt_max_voltage = safe_float(self.shunt_entries[2].get(), "Output Shunt Max Voltage")
+        output_shunt_max_current = safe_float(self.shunt_entries[3].get(), "Output Shunt Max Current")
+
         values = {
-            'power_supply': {
-                'vin': float(self.vin.get()),
-                'iin': float(self.iin.get()),
-                'vin_channel': self.pw_ch_vin.get(),
-                'vcc_enabled': self.vcc_var.get(),
-                'vcc': float(self.vcc.get()) if self.vcc_var.get() else 0,
-                'icc': float(self.icc.get()) if self.vcc_var.get() else 0,
-                'vcc_channel': self.pw_ch_vcc.get() if self.vcc_var.get() else ''
-            },
-            'daq': {f'ch{i+1}': combo.get() for i, combo in enumerate(self.daq_channels)},
-            'load': {
-                'low_load': {param: float(entry.get()) for param, entry in zip(['start', 'step', 'stop', 'delay'], self.low_load_entries)},
-                'high_load': {param: float(entry.get()) for param, entry in zip(['start', 'step', 'stop', 'delay'], self.high_load_entries)}
-            },
-            'protection': {
-                'max_vin': float(self.max_vin.get()),
-                'max_iin': float(self.max_iin.get()),
-                'max_iout': float(self.max_iout.get())
-            },
-            'current_shunt': {
-                label: float(entry.get()) for label, entry in zip(["Input Shunt Max Voltage", "Input Shunt Max Current", 
-                                                                   "Output Shunt Max Voltage", "Output Shunt Max Current"], 
-                                                                  self.shunt_entries)
-            }
+            'selected_ic' : self.selected_ic,
+            'input_v': input_v,
+            'input_i': input_i,
+            'power_supply_channel': power_supply_channel,
+            'daq_channels': daq_channels,
+            'max_vin': max_vin,
+            'max_iin': max_iin,
+            'max_iout': max_iout,
+            'low_load': dict(zip(load_params, low_load_values)),
+            'high_load': dict(zip(load_params, high_load_values)),
+            'shunt_settings': [
+                input_shunt_max_voltage,
+                input_shunt_max_current,
+                output_shunt_max_voltage,
+                output_shunt_max_current
+            ]
         }
+
         return values
     
-    def validate_values(self):
-        values = self.get_values()
+    def validate_values(self, values):
         try:
             # Validate input voltage and current
-            input_v = values['power_supply']['vin']
-            input_i = values['power_supply']['iin']
+            input_v = float(values['input_v'])
+            input_i = float(values['input_i'])
 
             if input_v > MAX_INPUT_VOLTAGE or input_v < MIN_INPUT_VOLTAGE:
                 raise ValueError(f"Input voltage (Input_V) range should be between {MIN_INPUT_VOLTAGE}V~{MAX_INPUT_VOLTAGE}V")
@@ -252,22 +267,25 @@ class EfficiencyTestFrame(TestFrame):
                 raise ValueError(f"Input current (Input_I) should not exceed {MAX_OUTPUT_CURRENT}A")
 
             # Validate load settings
-            low_load = values['load']['low_load']
-            high_load = values['load']['high_load']
+            low_load_start = float(values['low_load']['start'])
+            low_load_step = float(values['low_load']['step'])
+            low_load_stop = float(values['low_load']['stop'])
+            high_load_step = float(values['high_load']['step'])
+            high_load_stop = float(values['high_load']['stop'])
 
-            if low_load['start'] >= low_load['stop']:
+            if low_load_start >= low_load_stop:
                 raise ValueError("Low load start should be less than low load stop")
             
-            if low_load['stop'] >= high_load['stop']:
+            if low_load_stop >= high_load_stop:
                 raise ValueError("Low load stop should be less than high load stop")
             
-            if low_load['step'] <= 0 or high_load['step'] <= 0:
+            if low_load_step <= 0 or high_load_step <= 0:
                 raise ValueError("Load steps should be greater than 0")
 
             # Validate protection settings
-            max_vin = values['protection']['max_vin']
-            max_iin = values['protection']['max_iin']
-            max_iout = values['protection']['max_iout']
+            max_vin = float(values['max_vin'])
+            max_iin = float(values['max_iin'])
+            max_iout = float(values['max_iout'])
 
             if max_vin < input_v:
                 raise ValueError("Max input voltage protection should be greater than or equal to input voltage")
@@ -275,42 +293,30 @@ class EfficiencyTestFrame(TestFrame):
             if max_iin < input_i:
                 raise ValueError("Max input current protection should be greater than or equal to input current")
             
-            if max_iout < high_load['stop']:
+            if max_iout < high_load_stop:
                 raise ValueError("Max output current protection should be greater than or equal to high load stop")
 
             # Validate shunt settings
-            shunt = values['current_shunt']
-            if shunt["Input Shunt Max Current"] < input_i:
+            input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_voltage, output_shunt_max_current = values['shunt_settings']
+
+            if input_shunt_max_current < input_i:
                 raise ValueError("Input shunt max current should be greater than or equal to input current")
             
-            if shunt["Output Shunt Max Current"] < high_load['stop']:
+            if output_shunt_max_current < high_load_stop:
                 raise ValueError("Output shunt max current should be greater than or equal to high load stop")
 
             # Validate DAQ channel assignments
-            daq_channels = list(values['daq'].values())
+            daq_channels = values['daq_channels']
             if len(set(daq_channels)) != len(daq_channels):
                 raise ValueError("DAQ channels must be unique")
-            
-            # Validate VCC settings if enabled
-            if values['power_supply']['vcc_enabled']:
-                vcc_voltage = values['power_supply']['vcc']
-                vcc_current = values['power_supply']['icc']
-                vcc_channel = values['power_supply']['vcc_channel']
-
-                if vcc_voltage <= 0 or vcc_voltage > MAX_INPUT_VOLTAGE:
-                    raise ValueError(f"VCC voltage should be between 0 and {MAX_INPUT_VOLTAGE}V")
-
-                if vcc_current <= 0 or vcc_current > MAX_OUTPUT_CURRENT:
-                    raise ValueError(f"VCC current should be between 0 and {MAX_OUTPUT_CURRENT}A")
-
-                if not vcc_channel:
-                    raise ValueError("VCC channel must be selected")
-                
-                if values['power_supply']['vin_channel'] == vcc_channel:
-                    raise ValueError("Power supply channels must be unique")
 
             return True
 
+        except KeyError as e:
+            messagebox.showwarning("Warning", f"Missing required field: {str(e)}")
         except ValueError as e:
-            messagebox.showwarning("Validation Error", str(e))
-            return False
+            messagebox.showwarning("Warning", str(e))
+        except Exception as e:
+            messagebox.showwarning("Warning", f"An unexpected error occurred: {str(e)}")
+
+        return False
