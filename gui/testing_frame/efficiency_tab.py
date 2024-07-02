@@ -9,15 +9,11 @@ from io import StringIO
 from ..setting_frame.EfficiencyTest import EfficiencyTestFrame
 from .measure_eff_Tek import *
 from config import *
+from .test_tab import *
 
-class EfficiencyTab(tk.Frame):
+class EfficiencyTab(TestTab):
     def __init__(self, parent, instrument_manager, setting_frame):
-        super().__init__(parent)
-        self.instrument_manager = instrument_manager
-        self.setting_frame = setting_frame
-        self.test_running = False
-        self.output_queue = queue.Queue()
-        self.create_widgets()
+        super().__init__(parent, instrument_manager, setting_frame, "Efficiency")
 
     def create_widgets(self):
         self.create_control_frame()
@@ -38,17 +34,21 @@ class EfficiencyTab(tk.Frame):
         self.progress_bar = ttk.Progressbar(control_frame, variable=self.progress_var, maximum=100)
         self.progress_bar.pack(side=tk.LEFT, padx=5, expand=True, fill=tk.X)
         
+
     def create_results_area(self):
         results_frame = tk.Frame(self, bd=2, relief=tk.RIDGE)
-        results_frame.pack(pady=10, padx=10, fill=tk.BOTH, expand=True)  # Added expand=True
+        results_frame.pack(pady=10, padx=10, fill=tk.BOTH, expand=True)
 
-        # Increased height and width for both text widgets
+        # Add a title for the results area
+        self.results_title = tk.Label(results_frame, text="Efficiency Test", font=("times new roman", 16, "bold"), bg='black', fg="white")
+        self.results_title.pack(fill=tk.X, padx=5, pady=5)
+
+        # Increased height and width for the text widgets
         self.results_text = tk.Text(results_frame, height=30, width=40)
         self.results_text.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, pady=10, padx=10)
 
-        self.output_text = tk.Text(results_frame, height=30, width=80)
+        self.output_text = tk.Text(results_frame, height=30, width=120)
         self.output_text.pack(side=tk.RIGHT, expand=True, fill=tk.BOTH, pady=10, padx=10)
-
 
         
     def start_efficiency_test(self):

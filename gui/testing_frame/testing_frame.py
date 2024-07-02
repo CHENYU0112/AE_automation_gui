@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from .efficiency_tab import EfficiencyTab
+from .transient_tab import TransientTab
 from config import *
 
 class TestingFrame(tk.Frame):
@@ -9,53 +10,55 @@ class TestingFrame(tk.Frame):
         self.parent = parent
         self.instrument_manager = instrument_manager
         self.setting_frame = setting_frame
+        self.output_tab = None
         self.create_widgets()
         self.is_locked = True
 
     def create_widgets(self):
         self.create_title()
-        self.create_notebook()
+        self.create_output_tab()
 
     def create_title(self):
         title = tk.Label(self, text="Testing", font=("times new roman", 20, "bold"), bg='black', fg="white")
         title.pack(fill=tk.X, padx=5, pady=5)
 
-    def create_notebook(self):
-        self.notebook = ttk.Notebook(self)
-        self.notebook.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-
-        # Create Efficiency Tab
-        self.efficiency_tab = EfficiencyTab(self.notebook, self.instrument_manager, self.setting_frame)
-        self.notebook.add(self.efficiency_tab, text="Efficiency")
+    def create_output_tab(self):
+        if self.output_tab:
+            self.output_tab.destroy()
+        test_type = self.setting_frame.test_type
+        if test_type == 'Efficiency':
+            self.output_tab = EfficiencyTab(self, self.instrument_manager, self.setting_frame)
+        elif test_type == 'Transient':
+            self.output_tab = TransientTab(self, self.instrument_manager, self.setting_frame)
+        else:
+            self.output_tab = None
+        if self.output_tab:
+            self.output_tab.place(x=0, y=60, width=1400, height=1100)
 
     def lock_frame(self):
         self.is_locked = True
-        # Disable all tabs
-        for tab in self.notebook.tabs():
-            self.notebook.tab(tab, state='disabled')
-        # Disable all widgets in the efficiency tab
-        self.efficiency_tab.lock_frame()
+        if self.output_tab:
+            self.output_tab.lock_frame()
 
     def unlock_frame(self):
         self.is_locked = False
-        # Enable all tabs
-        for tab in self.notebook.tabs():
-            self.notebook.tab(tab, state='normal')
-        # Enable all widgets in the efficiency tab
-        self.efficiency_tab.unlock_frame()
+        if self.output_tab:
+            self.output_tab.unlock_frame()
 
-    def start_efficiency_test(self):
-        if not self.is_locked:
-            self.efficiency_tab.start_efficiency_test()
+    def start_test(self):
+        if not self.is_locked and self.output_tab:
+            self.output_tab.start_test()
 
-    def stop_efficiency_test(self):
-        if not self.is_locked:
-            self.efficiency_tab.stop_efficiency_test()
+    def stop_test(self):
+        if not self.is_locked and self.output_tab:
+            self.output_tab.stop_test()
 
     def update_progress(self, value):
-        if not self.is_locked:
-            self.efficiency_tab.update_progress(value)
+        if not self.is_locked and self.output_tab:
+            # Implement progress update if needed
+            pass
 
     def update_results(self, text):
-        if not self.is_locked:
-            self.efficiency_tab.update_results(text)
+        if not self.is_locked and self.output_tab:
+            self.output_tab.results_text.insert(tk.END, text + "\n")
+            self.output_tab.results_text.see(tk.END)

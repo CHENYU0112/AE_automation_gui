@@ -54,7 +54,10 @@ class MainApplication(tk.Frame):
         
         # Lock the testing frame immediately after creation
         self.lock_testing_frame()
-
+        
+    def create_output_tab(self):
+        self.testing_frame.create_output_tab()
+        
     def unlock_testing_frame(self):
         self.testing_frame.unlock_frame()
         self.status_var.set("Testing frame unlocked")
@@ -87,4 +90,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

@@ -3,23 +3,26 @@ from tkinter import ttk, messagebox
 from config import *
 from instrument_manager import InstrumentManager
 from .EfficiencyTest import EfficiencyTestFrame
+from .TransientTest import TransientTestFrame
 from .TestFrame import TestFrame
 from .utils import validate_entry
 
 class SettingFrame(tk.Frame):
+    
     def __init__(self, parent, instrument_manager):
         super().__init__(parent, bd=4, relief=tk.RIDGE, bg='gray')
         self.parent = parent
         self.instrument_manager = instrument_manager
         self.is_locked = False
         self.current_test_frame = None
+        self.test_type='none'
         self.create_widgets()
         self.set_default_values()
 
     def create_widgets(self):
         self.create_title()
         self.create_selection_frame()
-        self.create_test_frame()
+        self.create_test_type_frame()
         self.create_button_frame()
 
     def create_title(self):
@@ -47,9 +50,9 @@ class SettingFrame(tk.Frame):
         self.set_default_values(selected_ic)
         
     def on_test_type_selected(self, event):
-        self.create_test_frame()
+        self.create_test_type_frame()
 
-    def create_test_frame(self):
+    def create_test_type_frame(self):
         if self.current_test_frame:
             self.current_test_frame.destroy()
 
@@ -59,8 +62,8 @@ class SettingFrame(tk.Frame):
         if test_type == 'Efficiency':
             self.current_test_frame = EfficiencyTestFrame(self, self.instrument_manager, selected_ic)
         # Add more elif statements here for future test types
-        else:
-            raise ValueError(f"Unknown test type: {test_type}")
+        elif test_type == 'Transient':
+            self.current_test_frame = TransientTestFrame(self, self.instrument_manager, selected_ic)
 
         self.current_test_frame.place(x=25, y=100, width=470, height=920)
         self.set_default_values(selected_ic)
@@ -100,8 +103,17 @@ class SettingFrame(tk.Frame):
             print(self.current_test_frame.get_values())
             # Here you can do something with the values, like saving them or passing them to another part of your application
             messagebox.showinfo("Info", "Values set successfully!")
-            self.lock_frame()
+
+            # Update the test_type attribute
+            self.test_type = self.test_type_combo.get()
+
+            # Create the output tab in the TestingFrame
+            self.parent.create_output_tab()
+
+            # Unlock the TestingFrame in the MainApplication
             self.parent.unlock_testing_frame()
+
+            self.lock_frame()
 
     def lock_frame(self):
         self.is_locked = True
