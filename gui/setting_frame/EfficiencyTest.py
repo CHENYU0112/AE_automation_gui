@@ -2,8 +2,7 @@ from .TestFrame import TestFrame
 import tkinter as tk
 from tkinter import ttk, messagebox
 from config import *
-from .utils import validate_entry
-
+from .utils import validate_entry, validate_vin_entry
 class EfficiencyTestFrame(TestFrame):
     def __init__(self, parent, instrument_manager, selected_ic):
         super().__init__(parent, instrument_manager, selected_ic)
@@ -24,22 +23,22 @@ class EfficiencyTestFrame(TestFrame):
         tk.Label(frame, text=self.instrument_manager.instruments['supply'], font=FONT_BOLD, bg='white', fg="black").place(x=115, y=5)
 
         self.vin_frame = tk.Frame(frame, bg='white')
-        self.vin_frame.place(x=5, y=35, width=200, height=100)
+        self.vin_frame.place(x=5, y=35, width=230, height=100)
         
-        self.vin = self.create_entry(self.vin_frame, "Vin(V)", 0)
-        self.iin = self.create_entry(self.vin_frame, "Iin(A)", 30)
+        self.vin = self.create_entry(self.vin_frame, "Vin(V)", 0, width=10, validate_command=validate_vin_entry)
+        self.iin = self.create_entry(self.vin_frame, "Iin(A)", 40)
         
-        tk.Label(self.vin_frame, text="CH", font=FONT_NORMAL, bg='white', fg="black").place(x=0, y=60)
+        tk.Label(self.vin_frame, text="CH", font=FONT_NORMAL, bg='white', fg="black").place(x=0, y=70)
         self.pw_ch_vin = ttk.Combobox(self.vin_frame, width=5, values=POWER_SUPPLY_CHANNELS)
-        self.pw_ch_vin.place(x=30, y=60)
+        self.pw_ch_vin.place(x=30, y=70)
 
         self.vcc_var = tk.BooleanVar()
         self.vcc_checkbox = tk.Checkbutton(frame, text="VCC", variable=self.vcc_var, 
                                            command=self.toggle_vcc_frame, bg='white')
-        self.vcc_checkbox.place(x=190, y=35)
+        self.vcc_checkbox.place(x=210, y=120)
 
         self.vcc_frame = tk.Frame(frame, bg='white')
-        self.vcc_frame.place(x=250, y=35, width=200, height=100)
+        self.vcc_frame.place(x=270, y=35, width=200, height=100)
         
         self.vcc = self.create_entry(self.vcc_frame, "Vcc(V)", 0)
         self.icc = self.create_entry(self.vcc_frame, "Icc(A)", 30)
@@ -106,10 +105,11 @@ class EfficiencyTestFrame(TestFrame):
             entry = self.create_entry(frame, "", 30 + row*30, x=130 + col*225, width=8)
             self.shunt_entries.append(entry)
 
-    def create_entry(self, parent, label, y, x=None, width=8):
+    def create_entry(self, parent, label, y, x=None, width=8, validate_command=None):
         if label:
             tk.Label(parent, text=label, font=FONT_NORMAL, bg='white', fg="black").place(x=5, y=y)
-        entry = tk.Entry(parent, validate="key", validatecommand=(self.register(validate_entry), "%P"),
+        vcmd = (self.register(validate_command or validate_entry), '%P')
+        entry = tk.Entry(parent, validate="key", validatecommand=vcmd,
                          font=("times new roman", 12), bd=2, relief=tk.GROOVE, width=width)
         if x is None:
             x = len(label)*8 + 55
@@ -210,15 +210,23 @@ class EfficiencyTestFrame(TestFrame):
             entry.insert(0, str(value))
 
     def get_values(self):
+        
+        def safe_float_list(value, field_name):
+            try:
+                return [float(v.strip()) for v in value.split(',') if v.strip()]
+            except ValueError:
+                raise ValueError(f"Invalid input for {field_name}")
+
+        input_v = safe_float_list(self.vin.get(), "Input Voltage (Input_V)")
+        input_i = float(self.iin.get()) if self.iin.get() else 0
+        power_supply_channel = self.pw_ch_vin.get()
+        
         def safe_float(value, field_name):
             try:
                 return float(value) if value else 0
             except ValueError:
                 raise ValueError(f"Invalid input for {field_name}")
-
-        input_v = safe_float(self.vin.get(), "Input Voltage (Input_V)")
-        input_i = safe_float(self.iin.get(), "Input Current (Input_I)")
-        power_supply_channel = self.pw_ch_vin.get()
+            
         daq_channels = [combo.get() for combo in self.daq_channels]
         max_vin = safe_float(self.max_vin.get(), "Protective Maximum Input Voltage (MAX_Vin)")
         max_iin = safe_float(self.max_iin.get(), "Protective Maximum Input Current (MAX_Iin)")
@@ -251,15 +259,19 @@ class EfficiencyTestFrame(TestFrame):
                 output_shunt_max_current
             ]
         }
+        
 
         return values
     
     def validate_values(self, values):
         try:
-            # Validate input voltage and current
-            input_v = float(values['input_v'])
+            
+            input_v_list = values['input_v']
+            for i, input_v in enumerate(input_v_list):
+                if input_v > MAX_INPUT_VOLTAGE or input_v < MIN_INPUT_VOLTAGE:
+                    raise ValueError(f"Input voltage {i+1} (Input_V) range should be between {MIN_INPUT_VOLTAGE}V~{MAX_INPUT_VOLTAGE}V")
+                
             input_i = float(values['input_i'])
-
             if input_v > MAX_INPUT_VOLTAGE or input_v < MIN_INPUT_VOLTAGE:
                 raise ValueError(f"Input voltage (Input_V) range should be between {MIN_INPUT_VOLTAGE}V~{MAX_INPUT_VOLTAGE}V")
             
@@ -302,8 +314,6 @@ class EfficiencyTestFrame(TestFrame):
             if input_shunt_max_current < input_i:
                 raise ValueError("Input shunt max current should be greater than or equal to input current")
             
-            if output_shunt_max_current < high_load_stop:
-                raise ValueError("Output shunt max current should be greater than or equal to high load stop")
 
             # Validate DAQ channel assignments
             daq_channels = values['daq_channels']

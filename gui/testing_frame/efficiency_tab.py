@@ -10,10 +10,20 @@ from ..setting_frame.EfficiencyTest import EfficiencyTestFrame
 from .measure_eff_Tek import *
 from config import *
 from .test_tab import *
+import datetime
+import openpyxl
+from openpyxl.utils import get_column_letter
+import pandas as pd
+from pandastable import Table, TableModel
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import warnings
+
 
 class EfficiencyTab(TestTab):
     def __init__(self, parent, instrument_manager, setting_frame):
         super().__init__(parent, instrument_manager, setting_frame, "Efficiency")
+        self.results = []
 
     def create_widgets(self):
         self.create_control_frame()
@@ -43,12 +53,26 @@ class EfficiencyTab(TestTab):
         self.results_title = tk.Label(results_frame, text="Efficiency Test", font=("times new roman", 16, "bold"), bg='black', fg="white")
         self.results_title.pack(fill=tk.X, padx=5, pady=5)
 
-        # Increased height and width for the text widgets
-        self.results_text = tk.Text(results_frame, height=30, width=40)
-        self.results_text.pack(side=tk.LEFT, expand=True, fill=tk.BOTH, pady=10, padx=10)
+        # Create a notebook for different views
+        self.notebook = ttk.Notebook(results_frame)
+        self.notebook.pack(fill=tk.BOTH, expand=True, pady=10, padx=10)
 
-        self.output_text = tk.Text(results_frame, height=30, width=120)
-        self.output_text.pack(side=tk.RIGHT, expand=True, fill=tk.BOTH, pady=10, padx=10)
+        # Text widget for log output with scrollbar
+        log_frame = tk.Frame(self.notebook)
+        self.results_text = tk.Text(log_frame, height=30, width=40)
+        scrollbar = tk.Scrollbar(log_frame, command=self.results_text.yview)
+        self.results_text.configure(yscrollcommand=scrollbar.set)
+        self.results_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.notebook.add(log_frame, text="Log")
+
+        # Frame for Excel data
+        self.excel_frame = tk.Frame(self.notebook)
+        self.notebook.add(self.excel_frame, text="Data Table")
+
+        # Frame for chart
+        self.chart_frame = tk.Frame(self.notebook)
+        self.notebook.add(self.chart_frame, text="Chart")
 
         
     def start_efficiency_test(self):
@@ -76,26 +100,58 @@ class EfficiencyTab(TestTab):
             self.test_running = False
             self.start_button.config(state=tk.NORMAL)
             self.stop_button.config(state=tk.DISABLED)
-
+            
+            
     def run_test_thread(self, validated_settings):
+        sys.stderr.write("Debug: run_test_thread started\n")
+        sys.stderr.flush()
         try:
             self.setup_progress_bar(validated_settings)
             self.start_time = time.time()
-            self.after(0, self.update_progress_by_time)  # Start progress updates
-            _stop_flag=False
-            eff(**validated_settings)
-            self.update_results(f"Stop flag set to: {get_stop_flag()}")
+            self.after(0, self.update_progress_by_time)
+            _stop_flag = False
+            self.print_validated_settings(validated_settings)
+            
+            # Debug print
+            print("Validated settings:")
+            for key, value in validated_settings.items():
+                print(f"{key}: {value}")
+            
+            # Run the test and get results
+            try:
+                sys.stderr.write("Debug: About to call eff function\n")
+                sys.stderr.flush()
+                self.results = eff(**validated_settings)
+                sys.stderr.write("Debug: eff function completed\n")
+                sys.stderr.flush()
+            except Exception as e:
+                error_message = f"Error in eff function: {str(e)}\n"
+                error_message += "Arguments passed to eff:\n"
+                for key, value in validated_settings.items():
+                    error_message += f"{key}: {value}\n"
+                print(error_message)
+                self.update_results(error_message)
+                raise  # Re-raise the exception to be caught by the outer try-except
 
+            self.update_results(f"Stop flag set to: {get_stop_flag()}")
             if get_stop_flag():
                 self.update_results("Test stopped!")
             else:
                 self.update_results("Test completed successfully!")
+                self.create_excel_file()
         except Exception as e:
-            self.update_results(f"Error during test: {str(e)}")
+            error_message = f"Error during test: {str(e)}\n"
+            error_message += "Traceback:\n"
+            import traceback
+            error_message += traceback.format_exc()
+            print(error_message)
+            self.after(0, lambda: self.update_results(error_message))
         finally:
             self.test_running = False
             self.restore_output()
-            self.progress_var.set(100)  # Ensure progress bar is full at the end
+            self.after(0, lambda: self.progress_var.set(100))
+                
+            
     def redirect_output(self):
         self.old_stdout = sys.stdout
         sys.stdout = StringIO()
@@ -176,7 +232,8 @@ class EfficiencyTab(TestTab):
     def update_results(self, message):
         # Use after() to ensure this runs on the main thread
         self.after(0, lambda: self.results_text.insert(tk.END, message + "\n"))
-        self.after(0, self.results_text.see, tk.END)
+        self.after(0, lambda: self.results_text.see(tk.END))
+        self.after(0, lambda: self.results_text.update_idletasks())  # Force update of the widget
 
     def lock_frame(self):
         self.start_button.config(state=tk.DISABLED)
@@ -213,8 +270,6 @@ class EfficiencyTab(TestTab):
             - Input Current: {validated_settings['Max_input_current']}
             - Load Current: {validated_settings['Max_load_current']}
 
-        Output File: {validated_settings['output_file']}
-
         Load Sweep Parameters:
             - Input Voltage: {validated_settings['Input_V']}
             - Input Current: {validated_settings['Input_I']}
@@ -236,15 +291,6 @@ class EfficiencyTab(TestTab):
         Frequency: {validated_settings['FRE']}
         """
         self.update_results(print_string)
-        # Print argument name, data type, and value
-        # type_string = "Argument Types and Values:\n"
-        # for arg, value in validated_settings.items():
-        #     arg_string = f"{arg}: {type(value)} - {value}\n"
-        #     print(arg_string)  # Print to console
-        #     type_string += arg_string  # Add to GUI update string
-
-        # # Update GUI with types and values
-        # self.update_results(type_string)
 
     def validate_eff_data(self, values):
         try:
@@ -294,7 +340,7 @@ class EfficiencyTab(TestTab):
             Max_load_current = values['max_iout']
             
             # Extract and validate load sweep parameters
-            Input_V = [values['input_v']]  # Wrap in list to match expected type
+            Input_V = values['input_v']  # Wrap in list to match expected type
             Input_I = values['input_i']
             
             # Extract and validate low load sweep
@@ -314,7 +360,7 @@ class EfficiencyTab(TestTab):
             # Set FRE to 1 as it's not in the original settings
             FRE = 1
             
-            # Create a dictionary with all the parameters
+                # Create a dictionary with all the parameters
             eff_params = {
                 'input_shunt_max_voltage': input_shunt_max_voltage,
                 'input_shunt_max_current': input_shunt_max_current,
@@ -327,7 +373,6 @@ class EfficiencyTab(TestTab):
                 'Max_input_voltage': Max_input_voltage,
                 'Max_input_current': Max_input_current,
                 'Max_load_current': Max_load_current,
-                'output_file': 'efficiency_test_results',  # You might want to generate this dynamically
                 'Input_V': Input_V,
                 'Input_I': Input_I,
                 'Low_load_start': Low_load_start,
@@ -346,17 +391,13 @@ class EfficiencyTab(TestTab):
             
             # Validate data types
             for key, value in eff_params.items():
-                if key in ['Input_V']:
-                    if not isinstance(value, list) or not all(isinstance(v, float) for v in value):
-                        raise ValueError(f"{key} must be a list of floats")
-                elif key in ['FRE']:
+                if key in ['FRE']:
                     if not isinstance(value, int):
                         raise ValueError(f"{key} must be an integer")
-                elif key in ['power_supply_GPIB_address', 'data_logger_GPIB_address', 'electronic_load_GPIB_address', 'lecory_usb_address', 'input_v_ch', 'input_i_ch', 'output_v_ch', 'output_i_ch', 'vcc_ch', 'ldo_ch', 'output_file']:
+                elif key in ['power_supply_GPIB_address', 'data_logger_GPIB_address', 'electronic_load_GPIB_address', 'lecory_usb_address', 'input_v_ch', 'input_i_ch', 'output_v_ch', 'output_i_ch', 'vcc_ch', 'ldo_ch']:
                     if not isinstance(value, str):
                         raise ValueError(f"{key} must be a string")
-                elif not isinstance(value, float):
-                    raise ValueError(f"{key} must be a float")
+
             
             return eff_params
         
@@ -364,10 +405,100 @@ class EfficiencyTab(TestTab):
             raise ValueError(f"Missing required parameter: {str(e)}")
         except Exception as e:
             raise ValueError(f"Error in validating data: {str(e)}")
-                
 
-                
+    def generate_filename(self):
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        return f"efficiency_test_results_{timestamp}.xlsx"   
+    
+           
+    def create_excel_file(self):
+        filename = self.generate_filename()
+        workbook = xlsxwriter.Workbook(filename)
+        worksheet = workbook.add_worksheet()
 
+        # Write headers
+        headers = ['input_voltage_setpoint', 'VCC', 'PG', 'v_input_shunt', 'v_output_shunt',
+                'v_input_voltage', 'v_output_voltage', 'i_input_current', 'i_output_current',
+                'p_input_power', 'p_output_power', 'p_power_loss', 'efficiency',
+                'electronic_load_setpoint', 'electronic_load_current', 'electronic_load_voltage',
+                'switching_frequency']
+        for col, header in enumerate(headers):
+            worksheet.write(0, col, header)
 
+        # Write data
+        for row, result in enumerate(self.results, start=1):
+            for col, header in enumerate(headers):
+                worksheet.write(row, col, result.get(header, ''))
 
- 
+        workbook.close()
+        self.update_results(f"Excel file created: {filename}")
+
+        # Display the Excel file content in the GUI
+        self.display_excel_in_gui(filename)
+        
+        # Create and display the chart
+        self.create_and_display_chart()
+
+    def display_excel_in_gui(self, filename):
+        # Suppress warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            
+            # Read the Excel file
+            df = pd.read_excel(filename)
+
+            # Clear previous content
+            for widget in self.excel_frame.winfo_children():
+                widget.destroy()
+
+            # Create a Table widget
+            self.table = Table(self.excel_frame, dataframe=df, showtoolbar=True, showstatusbar=True)
+            self.table.show()
+    
+    def create_formatted_table(self, headers, data):
+        # Calculate column widths
+        col_widths = [max(len(str(row.get(header, ''))) for row in data + [dict(zip(headers, headers))]) for header in headers]
+        
+        # Create the header
+        header_row = ' | '.join(f"{header:<{col_widths[i]}}" for i, header in enumerate(headers))
+        separator = '-' * len(header_row)
+        
+        # Create the table string
+        table = f"{header_row}\n{separator}\n"
+        
+        # Add data rows
+        for row in data:
+            table += ' | '.join(f"{str(row.get(header, '')):<{col_widths[i]}}" for i, header in enumerate(headers)) + '\n'
+        
+        return table
+    
+    def create_and_display_chart(self):
+        # Clear previous chart
+        for widget in self.chart_frame.winfo_children():
+            widget.destroy()
+
+        # Create a new figure and axis
+        fig, ax = plt.subplots(figsize=(10, 6))
+
+        # Extract data for the chart
+        output_currents = [result['i_output_current'] for result in self.results]
+        efficiencies = [result['efficiency'] for result in self.results]
+
+        # Plot the data
+        ax.plot(output_currents, efficiencies, marker='o')
+        ax.set_xlabel('Output Current (A)')
+        ax.set_ylabel('Efficiency (%)')
+        ax.set_title('Efficiency vs Output Current')
+        ax.grid(True)
+
+        # Create a canvas to display the chart in the GUI
+        canvas = FigureCanvasTkAgg(fig, master=self.chart_frame)
+        canvas_widget = canvas.get_tk_widget()
+        canvas_widget.pack(fill=tk.BOTH, expand=True)
+
+        # Update the canvas
+        canvas.draw()
+        
+        
+        
+    

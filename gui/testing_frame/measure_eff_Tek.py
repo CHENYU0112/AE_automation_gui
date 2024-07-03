@@ -26,32 +26,46 @@ from power_supply import *
 
 
 def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_voltage, output_shunt_max_current,
-
         power_supply_GPIB_address, data_logger_GPIB_address, electronic_load_GPIB_address, lecory_usb_address,
-
-        input_v_ch, input_i_ch, output_v_ch, output_i_ch, vcc_ch, ldo_ch,  Max_input_voltage, Max_input_current,
-
-        Max_load_current, output_file, Input_V, Input_I, Low_load_start, Low_load_step, Low_load_stop,High_load_start, High_load_stop,
-
+        input_v_ch, input_i_ch, output_v_ch, output_i_ch, vcc_ch, ldo_ch, Max_input_voltage, Max_input_current,
+        Max_load_current, Input_V, Input_I, Low_load_start, Low_load_step, Low_load_stop, High_load_start, High_load_stop,
         High_load_step, low_load_timing, high_load_timing, FRE):
+
+    print("Debug: eff function started")
+    print("Debug: Parameters received:")
+    locals_copy = locals().copy()
+    for key, value in locals_copy.items():
+        print(f"{key}: {value}")
+
+    results = []
+    # Initialize variables
+    vcc_voltage = 0
+    ldo_voltage = 0
+    v_input_shunt = 0
+    v_output_shunt = 0
+    v_input_voltage = 0
+    v_output_voltage = 0
+    i_input_current = 0
+    i_output_current = 0
+    p_input_power = 0
+    p_output_power = 0
+    p_power_loss = 0
+    efficiency = 0
+    electronic_load_setpoint = 0
+    electronic_load_current = 0
+    electronic_load_voltage = 0
+    Frequency = 0
     
-
-        
-
-
-    print("FRE = ", FRE)
-
-    check_int = isinstance(FRE, int)
-
-    print(check_int)
-
+    print("Debug: FRE =", FRE)
+    print("Debug: check_int =", isinstance(FRE, int))
+    
     max_vin = max(Input_V)
-
     min_vin = min(Input_V)
-
-    print(min_vin)
-
+    print(f"Debug: max_vin = {max_vin}, min_vin = {min_vin}")
+    
     input_length = len(Input_V)
+    print(f"Debug: input_length = {input_length}")
+
 
 
 
@@ -263,7 +277,7 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
 
 
 
-            workbook = xlsxwriter.Workbook(output_file + '.xlsx')  # Name this file for if needed
+            workbook = xlsxwriter.Workbook('efficiency_test_results.xlsx')
 
             worksheet = workbook.add_worksheet()
 
@@ -374,6 +388,37 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
                     if get_stop_flag():
                         print("Test stopped by user")
                         break
+                    
+                    # Move this block before appending to results
+                    data_logger.write('CONF:VOLT:DC AUTO, MAX,' + vcc_v_add)
+                    data_logger.write('SENS:VOLT:DC:NPLC 2,' + vcc_v_add)
+                    data_logger.write('TRIG:SOUR IMM')
+                    vcc_voltage = float(data_logger.query('READ?'))
+
+                    data_logger.write('CONF:VOLT:DC AUTO, MAX,' + ldo_v_add)
+                    data_logger.write('SENS:VOLT:DC:NPLC 2,' + ldo_v_add)
+                    data_logger.write('TRIG:SOUR IMM')
+                    ldo_voltage = float(data_logger.query('READ?'))
+                    
+                    results.append({
+                        'input_voltage_setpoint': input_voltage_setpoint,
+                        'vcc_voltage': vcc_voltage,
+                        'ldo_voltage': ldo_voltage,
+                        'v_input_shunt': v_input_shunt,
+                        'v_output_shunt': v_output_shunt,
+                        'v_input_voltage': v_input_voltage,
+                        'v_output_voltage': v_output_voltage,
+                        'i_input_current': i_input_current,
+                        'i_output_current': i_output_current,
+                        'p_input_power': p_input_power,
+                        'p_output_power': p_output_power,
+                        'p_power_loss': p_power_loss,
+                        'efficiency': efficiency,
+                        'electronic_load_setpoint': float(electronic_load_setpoint),
+                        'electronic_load_current': float(electronic_load_current),
+                        'electronic_load_voltage': float(electronic_load_voltage),
+                        'switching_frequency': float(Frequency) if FRE == 1 else None
+                    })
 
                     index = index + 1
 
@@ -610,6 +655,27 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
                         print("Test stopped by user")
                         break
                     print(output_current_setpoint)
+                    
+                    
+                    results.append({
+                        'input_voltage_setpoint': input_voltage_setpoint,
+                        'vcc_voltage': vcc_voltage,
+                        'ldo_voltage': ldo_voltage,
+                        'v_input_shunt': v_input_shunt,
+                        'v_output_shunt': v_output_shunt,
+                        'v_input_voltage': v_input_voltage,
+                        'v_output_voltage': v_output_voltage,
+                        'i_input_current': i_input_current,
+                        'i_output_current': i_output_current,
+                        'p_input_power': p_input_power,
+                        'p_output_power': p_output_power,
+                        'p_power_loss': p_power_loss,
+                        'efficiency': efficiency,
+                        'electronic_load_setpoint': float(electronic_load_setpoint),
+                        'electronic_load_current': float(electronic_load_current),
+                        'electronic_load_voltage': float(electronic_load_voltage),
+                        'switching_frequency': float(Frequency) if FRE == 1 else None
+                    })
                     index = index + 1
 
                     electronic_load.write('MODE CCH')
@@ -1120,6 +1186,10 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
     else:
 
         print("Error: check I/O values")
+        
+
+
+    return results
 
 def calculate_total_steps(Input_V, Low_load_start, Low_load_stop, Low_load_step, High_load_stop, High_load_step):
     low_load_steps = len(np.arange(Low_load_start, Low_load_stop, Low_load_step))

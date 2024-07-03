@@ -11,8 +11,8 @@ class TestingFrame(tk.Frame):
         self.instrument_manager = instrument_manager
         self.setting_frame = setting_frame
         self.output_tab = None
-        self.create_widgets()
         self.is_locked = True
+        self.create_widgets()
 
     def create_widgets(self):
         self.create_title()
@@ -25,15 +25,23 @@ class TestingFrame(tk.Frame):
     def create_output_tab(self):
         if self.output_tab:
             self.output_tab.destroy()
+
         test_type = self.setting_frame.test_type
-        if test_type == 'Efficiency':
-            self.output_tab = EfficiencyTab(self, self.instrument_manager, self.setting_frame)
-        elif test_type == 'Transient':
-            self.output_tab = TransientTab(self, self.instrument_manager, self.setting_frame)
+        tab_class = self.get_tab_class(test_type)
+
+        if tab_class:
+            self.output_tab = tab_class(self, self.instrument_manager, self.setting_frame)
+            self.output_tab.place(x=0, y=60, width=1400, height=1000)
         else:
             self.output_tab = None
-        if self.output_tab:
-            self.output_tab.place(x=0, y=60, width=1400, height=1100)
+
+    def get_tab_class(self, test_type):
+        tab_classes = {
+            'Efficiency': EfficiencyTab,
+            'Transient': TransientTab,
+            # Add more test types here as needed
+        }
+        return tab_classes.get(test_type)
 
     def lock_frame(self):
         self.is_locked = True
@@ -55,10 +63,8 @@ class TestingFrame(tk.Frame):
 
     def update_progress(self, value):
         if not self.is_locked and self.output_tab:
-            # Implement progress update if needed
-            pass
+            self.output_tab.update_progress(value)
 
     def update_results(self, text):
         if not self.is_locked and self.output_tab:
-            self.output_tab.results_text.insert(tk.END, text + "\n")
-            self.output_tab.results_text.see(tk.END)
+            self.output_tab.update_results(text)

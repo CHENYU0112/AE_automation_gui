@@ -5,7 +5,7 @@ from instrument_manager import InstrumentManager
 from .EfficiencyTest import EfficiencyTestFrame
 from .TransientTest import TransientTestFrame
 from .TestFrame import TestFrame
-from .utils import validate_entry
+from .utils import validate_entry , validate_vin_entry
 
 class SettingFrame(tk.Frame):
     
