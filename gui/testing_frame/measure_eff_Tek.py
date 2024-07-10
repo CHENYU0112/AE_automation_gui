@@ -37,7 +37,7 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
     for key, value in locals_copy.items():
         print(f"{key}: {value}")
 
-    results = []
+    results = {vin: [] for vin in Input_V}  # Initialize a list for each input voltage
     # Initialize variables
     vcc_voltage = 0
     ldo_voltage = 0
@@ -388,7 +388,7 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
                     if get_stop_flag():
                         print("Test stopped by user")
                         break
-                    
+                    print('low load : ', output_current_setpoint)
                     # Move this block before appending to results
                     data_logger.write('CONF:VOLT:DC AUTO, MAX,' + vcc_v_add)
                     data_logger.write('SENS:VOLT:DC:NPLC 2,' + vcc_v_add)
@@ -400,26 +400,7 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
                     data_logger.write('TRIG:SOUR IMM')
                     ldo_voltage = float(data_logger.query('READ?'))
                     
-                    results.append({
-                        'input_voltage_setpoint': input_voltage_setpoint,
-                        'vcc_voltage': vcc_voltage,
-                        'ldo_voltage': ldo_voltage,
-                        'v_input_shunt': v_input_shunt,
-                        'v_output_shunt': v_output_shunt,
-                        'v_input_voltage': v_input_voltage,
-                        'v_output_voltage': v_output_voltage,
-                        'i_input_current': i_input_current,
-                        'i_output_current': i_output_current,
-                        'p_input_power': p_input_power,
-                        'p_output_power': p_output_power,
-                        'p_power_loss': p_power_loss,
-                        'efficiency': efficiency,
-                        'electronic_load_setpoint': float(electronic_load_setpoint),
-                        'electronic_load_current': float(electronic_load_current),
-                        'electronic_load_voltage': float(electronic_load_voltage),
-                        'switching_frequency': float(Frequency) if FRE == 1 else None
-                    })
-
+                  
                     index = index + 1
 
                     electronic_load.write('MODE CCL')
@@ -533,7 +514,25 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
                     efficiency = 100.0 * p_output_power / p_input_power
 
 
-
+                    results[input_voltage_setpoint].append({
+                        'input_voltage_setpoint': input_voltage_setpoint,
+                        'vcc_voltage': vcc_voltage,
+                        'ldo_voltage': ldo_voltage,
+                        'v_input_shunt': v_input_shunt,
+                        'v_output_shunt': v_output_shunt,
+                        'v_input_voltage': v_input_voltage,
+                        'v_output_voltage': v_output_voltage,
+                        'i_input_current': i_input_current,
+                        'i_output_current': i_output_current,
+                        'p_input_power': p_input_power,
+                        'p_output_power': p_output_power,
+                        'p_power_loss': p_power_loss,
+                        'efficiency': efficiency,
+                        'electronic_load_setpoint': float(electronic_load_setpoint),
+                        'electronic_load_current': float(electronic_load_current),
+                        'electronic_load_voltage': float(electronic_load_voltage),
+                        'switching_frequency': float(Frequency) if FRE == 1 else None
+                    })
                     print('Input Voltage Set Point', input_voltage_setpoint)
 
                     # print('Temperature = ', temperature)
@@ -654,28 +653,10 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
                     if get_stop_flag():
                         print("Test stopped by user")
                         break
-                    print(output_current_setpoint)
+                    print('high load : ', output_current_setpoint)
                     
                     
-                    results.append({
-                        'input_voltage_setpoint': input_voltage_setpoint,
-                        'vcc_voltage': vcc_voltage,
-                        'ldo_voltage': ldo_voltage,
-                        'v_input_shunt': v_input_shunt,
-                        'v_output_shunt': v_output_shunt,
-                        'v_input_voltage': v_input_voltage,
-                        'v_output_voltage': v_output_voltage,
-                        'i_input_current': i_input_current,
-                        'i_output_current': i_output_current,
-                        'p_input_power': p_input_power,
-                        'p_output_power': p_output_power,
-                        'p_power_loss': p_power_loss,
-                        'efficiency': efficiency,
-                        'electronic_load_setpoint': float(electronic_load_setpoint),
-                        'electronic_load_current': float(electronic_load_current),
-                        'electronic_load_voltage': float(electronic_load_voltage),
-                        'switching_frequency': float(Frequency) if FRE == 1 else None
-                    })
+                  
                     index = index + 1
 
                     electronic_load.write('MODE CCH')
@@ -787,7 +768,25 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
                     efficiency = 100.0 * p_output_power / p_input_power
 
 
-
+                    results[input_voltage_setpoint].append({
+                        'input_voltage_setpoint': input_voltage_setpoint,
+                        'vcc_voltage': vcc_voltage,
+                        'ldo_voltage': ldo_voltage,
+                        'v_input_shunt': v_input_shunt,
+                        'v_output_shunt': v_output_shunt,
+                        'v_input_voltage': v_input_voltage,
+                        'v_output_voltage': v_output_voltage,
+                        'i_input_current': i_input_current,
+                        'i_output_current': i_output_current,
+                        'p_input_power': p_input_power,
+                        'p_output_power': p_output_power,
+                        'p_power_loss': p_power_loss,
+                        'efficiency': efficiency,
+                        'electronic_load_setpoint': float(electronic_load_setpoint),
+                        'electronic_load_current': float(electronic_load_current),
+                        'electronic_load_voltage': float(electronic_load_voltage),
+                        'switching_frequency': float(Frequency) if FRE == 1 else None
+                    })
                     print('Input Voltage Set Point', input_voltage_setpoint)
 
                     # print('Temperature = ', temperature)

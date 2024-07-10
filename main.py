@@ -5,7 +5,10 @@ from instrument_manager import InstrumentManager
 from gui.setting_frame.setting_frame import SettingFrame
 from gui.testing_frame.testing_frame import TestingFrame
 from config import WINDOW_SIZE, FONT_TITLE
-
+import warnings
+from openpyxl.chart import ScatterChart, Reference, Series
+from openpyxl.chart.marker import Marker
+warnings.filterwarnings("ignore", category=FutureWarning)
 class MainApplication(tk.Frame):
     def __init__(self, parent, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)

@@ -6,13 +6,13 @@ from .utils import validate_entry, validate_vin_entry
 class EfficiencyTestFrame(TestFrame):
     def __init__(self, parent, instrument_manager, selected_ic):
         super().__init__(parent, instrument_manager, selected_ic)
+        self.setting_frame = parent  # Store reference to SettingFrame
 
     def create_widgets(self):
         tk.Label(self, text="Efficiency Test Settings", font=FONT_BOLD, bg='yellow', fg="black").place(x=5, y=5)
         self.create_power_supply_frame()
         self.create_daq_frame()
         self.create_load_frame()
-        self.create_protection_frame()
         self.create_current_shunt_frame()
 
     def create_power_supply_frame(self):
@@ -35,7 +35,7 @@ class EfficiencyTestFrame(TestFrame):
         self.vcc_var = tk.BooleanVar()
         self.vcc_checkbox = tk.Checkbutton(frame, text="VCC", variable=self.vcc_var, 
                                            command=self.toggle_vcc_frame, bg='white')
-        self.vcc_checkbox.place(x=210, y=120)
+        self.vcc_checkbox.place(x=190, y=120)
 
         self.vcc_frame = tk.Frame(frame, bg='white')
         self.vcc_frame.place(x=270, y=35, width=200, height=100)
@@ -79,19 +79,9 @@ class EfficiencyTestFrame(TestFrame):
         self.low_load_stop_var.trace_add('write', self.update_high_load_start)
         self.high_load_start_var.trace_add('write', self.update_low_load_stop)
 
-    def create_protection_frame(self):
-        frame = tk.Frame(self, bd=2, relief=tk.RIDGE, bg='white')
-        frame.place(x=5, y=630, width=450, height=140)
-        
-        tk.Label(frame, text="Protection", font=FONT_BOLD, bg='white', fg="black").place(x=5, y=5)
-
-        self.max_vin = self.create_entry(frame, "Max Vin(V)", 35)
-        self.max_iin = self.create_entry(frame, "Max Iin(A)", 65)
-        self.max_iout = self.create_entry(frame, "Max Iout(A)", 95)
-
     def create_current_shunt_frame(self):
         frame = tk.Frame(self, bd=2, relief=tk.RIDGE, bg='white')
-        frame.place(x=5, y=780, width=450, height=130)
+        frame.place(x=5, y=630, width=450, height=130)
         
         tk.Label(frame, text="Current Shunt ", font=FONT_BOLD, bg='white', fg="black").place(x=5, y=5)
 
@@ -195,14 +185,6 @@ class EfficiencyTestFrame(TestFrame):
             entry.delete(0, tk.END)
             entry.insert(0, str(value))
 
-        # Protection
-        self.max_vin.delete(0, tk.END)
-        self.max_vin.insert(0, str(settings['protection']['max_vin']))
-        self.max_iin.delete(0, tk.END)
-        self.max_iin.insert(0, str(settings['protection']['max_iin']))
-        self.max_iout.delete(0, tk.END)
-        self.max_iout.insert(0, str(settings['protection']['max_iout']))
-
         # Current Shunt
         shunt_values = settings['current_shunt'].values()
         for entry, value in zip(self.shunt_entries, shunt_values):
@@ -210,10 +192,15 @@ class EfficiencyTestFrame(TestFrame):
             entry.insert(0, str(value))
 
     def get_values(self):
-        
         def safe_float_list(value, field_name):
             try:
                 return [float(v.strip()) for v in value.split(',') if v.strip()]
+            except ValueError:
+                raise ValueError(f"Invalid input for {field_name}")
+
+        def safe_float(value, field_name):
+            try:
+                return float(value) if value else 0
             except ValueError:
                 raise ValueError(f"Invalid input for {field_name}")
 
@@ -221,16 +208,12 @@ class EfficiencyTestFrame(TestFrame):
         input_i = float(self.iin.get()) if self.iin.get() else 0
         power_supply_channel = self.pw_ch_vin.get()
         
-        def safe_float(value, field_name):
-            try:
-                return float(value) if value else 0
-            except ValueError:
-                raise ValueError(f"Invalid input for {field_name}")
-            
         daq_channels = [combo.get() for combo in self.daq_channels]
-        max_vin = safe_float(self.max_vin.get(), "Protective Maximum Input Voltage (MAX_Vin)")
-        max_iin = safe_float(self.max_iin.get(), "Protective Maximum Input Current (MAX_Iin)")
-        max_iout = safe_float(self.max_iout.get(), "Protective Maximum Output Current (MAX_Iout)")
+        
+        # Access protection values from SettingFrame
+        max_vin = safe_float(self.setting_frame.max_vin.get(), "Protective Maximum Input Voltage (MAX_Vin)")
+        max_iin = safe_float(self.setting_frame.max_iin.get(), "Protective Maximum Input Current (MAX_Iin)")
+        max_iout = safe_float(self.setting_frame.max_iout.get(), "Protective Maximum Output Current (MAX_Iout)")
 
         load_params = ['start', 'step', 'stop', 'delay']
         low_load_values = [safe_float(entry.get(), f"Low Load {param.capitalize()}") for entry, param in zip(self.low_load_entries, load_params)]

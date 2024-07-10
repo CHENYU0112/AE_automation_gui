@@ -39,6 +39,9 @@ MAX_OUTPUT_CURRENT = 20
 # DAQ Options
 DAQ_OPTIONS = ['input V', 'input I', 'output V', 'output I', 'Vcc', 'LDO']
 
+# DAQ Options
+Scope_OPTIONS = ['input V', 'SW', 'output V', 'IL', 'PGD', 'output I']
+
 # Power Supply Channels
 POWER_SUPPLY_CHANNELS = [' 1', ' 2', ' 3', ' 4']
 
@@ -66,8 +69,16 @@ DEFAULT_SETTINGS = {
         'ch5': 'Vcc',
         'ch6': 'LDO'
     },
+    'scope': {
+        'ch1': 'input V',
+        'ch2': 'SW',
+        'ch3': 'output V',
+        'ch4': 'IL',
+        'ch5':'PGD',
+        'ch6':'output I'
+    },
     'load': {
-        'low_load': {'start': 0.1, 'step': 0.5, 'stop': 1.0, 'delay': 1},
+        'low_load': {'start': 0.0, 'step': 0.5, 'stop': 1.0, 'delay': 1},
         'high_load': {'start': 1.0, 'step': 1.0, 'stop': 15.0, 'delay': 1}
     },
     'protection': {
@@ -101,8 +112,16 @@ TDA48820A_SETTINGS = {
         'ch5': 'Vcc',
         'ch6': 'LDO'
     },
+    'scope': {
+        'ch1': 'input V',
+        'ch2': 'SW',
+        'ch3': 'output V',
+        'ch4': 'IL',
+        'ch5':'PGD',
+        'ch6':'output I'
+    },
     'load': {
-        'low_load': {'start': 0.1, 'step': 0.2, 'stop': 1.0, 'delay': 1},
+        'low_load': {'start': 0.0, 'step': 0.2, 'stop': 1.0, 'delay': 1},
         'high_load': {'start': 1.0, 'step': 0.5, 'stop': 3.0, 'delay': 1}
     },
     'protection': {

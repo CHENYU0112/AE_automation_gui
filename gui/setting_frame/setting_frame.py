@@ -22,6 +22,7 @@ class SettingFrame(tk.Frame):
     def create_widgets(self):
         self.create_title()
         self.create_selection_frame()
+        self.create_protection_frame()
         self.create_test_type_frame()
         self.create_button_frame()
 
@@ -65,8 +66,44 @@ class SettingFrame(tk.Frame):
         elif test_type == 'Transient':
             self.current_test_frame = TransientTestFrame(self, self.instrument_manager, selected_ic)
 
-        self.current_test_frame.place(x=25, y=100, width=470, height=920)
+        self.current_test_frame.place(x=25, y=240, width=470, height=780)
+        
         self.set_default_values(selected_ic)
+        
+    def create_protection_frame(self):
+        frame = tk.Frame(self, bd=2, relief=tk.RIDGE, bg='white')
+        frame.place(x=25, y=100, width=470, height=140)
+        
+        tk.Label(frame, text="Protection", font=FONT_BOLD, bg='white', fg="black").place(x=5, y=5)
+
+        self.max_vin = self.create_entry(frame, "Max Vin(V)", 35)
+        self.max_iin = self.create_entry(frame, "Max Iin(A)", 65)
+        self.max_iout = self.create_entry(frame, "Max Iout(A)", 95)
+
+    def create_entry(self, parent, label, y, x=None, width=8):
+        if label:
+            tk.Label(parent, text=label, font=FONT_NORMAL, bg='white', fg="black").place(x=5, y=y)
+        entry = tk.Entry(parent, validate="key", validatecommand=(self.register(validate_entry), "%P"),
+                         font=("times new roman", 12), bd=2, relief=tk.GROOVE, width=width)
+        if x is None:
+            x = len(label)*8 + 55
+        entry.place(x=x, y=y)
+        return entry
+
+    def get_protection_values(self):
+        return {
+            'max_vin': float(self.max_vin.get()),
+            'max_iin': float(self.max_iin.get()),
+            'max_iout': float(self.max_iout.get())
+        }
+
+    def set_protection_values(self, values):
+        self.max_vin.delete(0, tk.END)
+        self.max_vin.insert(0, str(values['max_vin']))
+        self.max_iin.delete(0, tk.END)
+        self.max_iin.insert(0, str(values['max_iin']))
+        self.max_iout.delete(0, tk.END)
+        self.max_iout.insert(0, str(values['max_iout']))
 
     def create_button_frame(self):
         frame = tk.Frame(self, bd=4, relief=tk.RIDGE, bg='gray', borderwidth=0)
@@ -83,8 +120,11 @@ class SettingFrame(tk.Frame):
     def set_default_values(self, ic='DEFAULT'):
         default_settings = IC_DEFAULT_SETTINGS.get(ic, DEFAULT_SETTINGS)
         if self.current_test_frame:
-            self.current_test_frame.selected_ic = ic  # Update the selected_ic in the test frame
+            self.current_test_frame.selected_ic = ic
             self.current_test_frame.set_default_values(default_settings)
+        
+        # Set default protection values
+        self.set_protection_values(default_settings['protection'])
 
     def reset_fields(self):
         selected_ic = self.ic_combo.get()
@@ -118,12 +158,16 @@ class SettingFrame(tk.Frame):
     def lock_frame(self):
         self.is_locked = True
         for widget in self.winfo_children():
-            if widget != self.reset_button and isinstance(widget, (tk.Entry, ttk.Combobox, tk.Button)):
+            if isinstance(widget, (tk.Entry, ttk.Combobox, tk.Button)):
                 widget.config(state='disabled')
         if self.current_test_frame:
             for widget in self.current_test_frame.winfo_children():
                 if isinstance(widget, (tk.Entry, ttk.Combobox, tk.Button)):
                     widget.config(state='disabled')
+        # Disable protection frame entries
+        self.max_vin.config(state='disabled')
+        self.max_iin.config(state='disabled')
+        self.max_iout.config(state='disabled')
 
     def unlock_frame(self):
         self.is_locked = False
@@ -134,6 +178,11 @@ class SettingFrame(tk.Frame):
             for widget in self.current_test_frame.winfo_children():
                 if isinstance(widget, (tk.Entry, ttk.Combobox, tk.Button)):
                     widget.config(state='normal')
+        # Enable protection frame entries
+        self.max_vin.config(state='normal')
+        self.max_iin.config(state='normal')
+        self.max_iout.config(state='normal')
+
 
     def get_instrument_manager(self):
         return self.instrument_manager
