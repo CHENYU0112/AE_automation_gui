@@ -18,9 +18,7 @@ instrument_strings = [
     "USB0::0x0699::0x0522::B027098::INSTR"    #oscil
 ]
 
-# Connect to each instrument
-for instrument_string in instrument_strings:
-  connect_instrument(instrument_string)
+
 
 # Optional: Instrument discovery (already included in your script)
 print("\nChecking for available instruments:")

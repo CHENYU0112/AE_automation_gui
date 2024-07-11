@@ -1,12 +1,10 @@
-import tkinter as tk
-from tkinter import ttk, messagebox
+from ..setting_frame.EfficiencyTest import EfficiencyTestFrame
 import threading
 import queue
 import sys
 import time
 import numpy as np
 from io import StringIO
-from ..setting_frame.EfficiencyTest import EfficiencyTestFrame
 from .measure_eff_Tek import *
 from config import *
 from .test_tab import *

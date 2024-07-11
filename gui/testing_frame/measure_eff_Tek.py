@@ -1,28 +1,10 @@
-
 import numpy as np
-
 import pyvisa
-
 import time
-
 import xlsxwriter
 from config import *
 from power_supply import *
-
-
-
-#from measure_eff_config import input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_voltage, \
-
-    #output_shunt_max_current, power_supply_GPIB_address, data_logger_GPIB_address, \
-
-    #electronic_load_GPIB_address, lecory_usb_address, input_v_ch, input_i_ch, output_v_ch, output_i_ch, VCC, temp_type, \
-
-    #Max_input_voltage, Max_input_current, Max_output_voltage, Max_load_current, output_file, \
-
-    #Input_V, Input_I, Low_load_start, Low_load_step, Low_load_stop, High_load_stop, High_load_step, low_load_timing,\
-
-    #high_load_timing
-
+from pverifyDrivers import scope
 
 
 def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_voltage, output_shunt_max_current,
@@ -32,7 +14,19 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
         High_load_step, low_load_timing, high_load_timing, FRE):
 
     print("Debug: eff function started")
-    print("Debug: Parameters received:")
+    results = {vin: [] for vin in Input_V}
+
+    rm = pyvisa.ResourceManager()
+    p_supply = rm.open_resource(power_supply_GPIB_address)
+    Power_supply = power_supplies(p_supply)
+    supply_type = rm.open_resource(power_supply_GPIB_address).query('*IDN?')
+
+    data_logger = rm.open_resource(data_logger_GPIB_address)
+    electronic_load = rm.open_resource(electronic_load_GPIB_address)
+    
+
+    sc = scope.TEK_MSO5XB(lecory_usb_address, Simulate=False, Reset=True)    
+
     locals_copy = locals().copy()
     for key, value in locals_copy.items():
         print(f"{key}: {value}")
@@ -116,50 +110,51 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
             output_i_add = ' ' + '(@' + str(output_i_ch) + ')'
 
 
+#===================================================================================================
+            # rm = pyvisa.ResourceManager()
 
-            rm = pyvisa.ResourceManager()
+            # rm.list_resources()
 
-            rm.list_resources()
+            # print("we are here1")
 
-            print("we are here1")
+            # check_string = isinstance(power_supply_GPIB_address, str)
 
-            check_string = isinstance(power_supply_GPIB_address, str)
-
-            print(check_string)
-
-
-
-            #power_supply = rm.open_resource(power_supply_GPIB_address) #**********************
+            # print(check_string)
 
 
 
-            p_supply = rm.open_resource(power_supply_GPIB_address)
-
-            Power_supply = power_supplies(p_supply)
-
-            supply_type = rm.open_resource(power_supply_GPIB_address).query('*IDN?')
+            # #power_supply = rm.open_resource(power_supply_GPIB_address) #**********************
 
 
 
-            data_logger = rm.open_resource(data_logger_GPIB_address)
+            # p_supply = rm.open_resource(power_supply_GPIB_address)
 
-            electronic_load = rm.open_resource(electronic_load_GPIB_address)
+            # Power_supply = power_supplies(p_supply)
 
-            #electronic_load_5LDO = rm.open_resource('GPIB0::' + electronic_load_GPIB_address + '::INSTR')
+            # supply_type = rm.open_resource(power_supply_GPIB_address).query('*IDN?')
 
-            #electronic_load_3p3LDO = rm.open_resource('GPIB0::' + electronic_load_GPIB_address + '::INSTR')
 
-            lecroy = rm.open_resource(lecory_usb_address)
 
-            print("I'm here1")
+            # data_logger = rm.open_resource(data_logger_GPIB_address)
 
-            lecroy.write('COMM_HEADER OFF')  # need this command to remove "vbs" header
+            # electronic_load = rm.open_resource(electronic_load_GPIB_address)
 
-            data_logger.write('*CLS')
+            # #electronic_load_5LDO = rm.open_resource('GPIB0::' + electronic_load_GPIB_address + '::INSTR')
 
-            # data_logger.write('CONF:TEMP TC,'+ temp_type  + ','+ temp_add)
+            # #electronic_load_3p3LDO = rm.open_resource('GPIB0::' + electronic_load_GPIB_address + '::INSTR')
 
-            print("Here I am111")
+            # lecroy = rm.open_resource(lecory_usb_address)
+
+            # print("I'm here1")
+
+            # lecroy.write('COMM_HEADER OFF')  # need this command to remove "vbs" header
+
+            # data_logger.write('*CLS')
+
+            # # data_logger.write('CONF:TEMP TC,'+ temp_type  + ','+ temp_add)
+
+            # print("Here I am111")
+#===================================================================================================
 
             if supply_type.find('62006P') > -1 or supply_type.find('62012') > -1:
 
@@ -226,44 +221,45 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
                 #lecroy.write(r"""vbs 'app.measure.p2.paramengine = "width" ' """)
 
                 #lecroy.write(r"""vbs 'app.measure.p1.source1 = "C1" ' """)
+                ch1 = sc.GetChannel(Index=1)
+
+                ch1.display_overlay()
+                ch1.set_measurement(MeasureIndex=1, MeasureType='FREQUENCY', State='ON', Source=1)
+
+
+                # lecroy.write("display:waveview1:ch2:state 0")  # Turn off ch2 waveform
+
+                # lecroy.write("display:waveview1:ch3:state 0")
+
+                # lecroy.write("display:waveview1:ch4:state 0")
+
+                # lecroy.write("display:waveview1:ch5:state 0")
+
+                # lecroy.write("display:waveview1:ch6:state 0")
+
+                # lecroy.write("display:waveview1:ch1:state 1")  # turn on ch1 waveform
+
+                # time.sleep(2)
+
+                # lecroy.write('HOR:SCA 20E-6')  # set horizontal scale to 20ms
+
+                # lecroy.write("MEASUREMENT:MEAS1:TYPE FREQUENCY")  # set to measure frequency
+
+                # lecroy.write("MEASUREMENT:MEAS1:SOURCE CH1") # set the source to ch1
+
+                # lecroy.write('CH1:BAN 20E+06')  # set bandwidth to 20MHz
+
+                # time.sleep(2)
+
+                # lecroy.write("TRIGger:A:TYPe EDGE")  # set to edge trigger
+
+                # lecroy.write("TRIGger:A:EDGE:SOUrce CH1")  # set ch1 to be the edge trigger source
+
+                # lecroy.write("TRIGger:A SETLevel")  # set the triger level to 50%
 
 
 
-
-
-                lecroy.write("display:waveview1:ch2:state 0")  # Turn off ch2 waveform
-
-                lecroy.write("display:waveview1:ch3:state 0")
-
-                lecroy.write("display:waveview1:ch4:state 0")
-
-                lecroy.write("display:waveview1:ch5:state 0")
-
-                lecroy.write("display:waveview1:ch6:state 0")
-
-                lecroy.write("display:waveview1:ch1:state 1")  # turn on ch1 waveform
-
-                time.sleep(2)
-
-                lecroy.write('HOR:SCA 20E-6')  # set horizontal scale to 20ms
-
-                lecroy.write("MEASUREMENT:MEAS1:TYPE FREQUENCY")  # set to measure frequency
-
-                lecroy.write("MEASUREMENT:MEAS1:SOURCE CH1") # set the source to ch1
-
-                lecroy.write('CH1:BAN 20E+06')  # set bandwidth to 20MHz
-
-                time.sleep(2)
-
-                lecroy.write("TRIGger:A:TYPe EDGE")  # set to edge trigger
-
-                lecroy.write("TRIGger:A:EDGE:SOUrce CH1")  # set ch1 to be the edge trigger source
-
-                lecroy.write("TRIGger:A SETLevel")  # set the triger level to 50%
-
-
-
-                time.sleep(1)
+                # time.sleep(1)
 
 
 
@@ -324,6 +320,7 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
             worksheet.write(0, 17, 'switching_frequency')
 
 
+    
 
 
 
@@ -338,6 +335,42 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
                 #power_supply.write('SOUR:VOLT ' + str(input_voltage_setpoint))
 
                 Power_supply.set_voltage(input_voltage_setpoint, supply_type)
+                            # Now use ProbeSetup on the channel object
+                ch1.ProbeSetup(
+                    Coupling='DC',
+                    Bandwidth='20E+06',  # 20 MHz bandwidth
+                    Vrange=2.5,          # This will set to 0.25 V/div (2.5/10)
+                    Offset=0,
+                    Position=0,
+                    Impedance=50,        # 50 ohm termination
+                    Probe_Attn=1         # 1x probe attenuation
+                )
+                ch1.delete_measurement(1)
+                # Adjust vertical scale to 2.5 V/div for channel 1
+                ch1.set_vertical_scale(1, 0.2)
+
+                # Set termination to 50 ohm for channel 1
+                ch1.set_termination(1, 50)
+
+                # Adjust horizontal scale to 500 ns/div
+                ch1.horscale('2us')
+
+                # Set trigger for channel 1
+                ch1.set_trigger(ch=1, level=1.25, slope='RISE')
+
+                # Reset and reconfigure the frequency measurement
+                
+                ch1.set_measurement(MeasureIndex=1, MeasureType='FREQUENCY', State='ON', Source=1)
+                ch1.set_measurement(
+                    MeasureIndex=2,
+                    MeasureType='TIE',  # Time Interval Error, a common jitter measurement
+                    State='ON',
+                    Source=1  # Assuming we want to measure jitter on Channel 1
+                )
+
+                
+                screenshot_filename = f"screenshot_Vin_{input_voltage_setpoint}V.png"
+                ch1.saveimage(screenshot_filename)
 
                 print("input in loop is", input_voltage_setpoint) #********************************
 
@@ -359,25 +392,25 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
 
                 electronic_load.write('LOAD ON')
 
-                if input_voltage_setpoint < 5:
+                # if input_voltage_setpoint < 5:
 
-                    lecroy.write('CH1:SCA 2')
+                #     lecroy.write('CH1:SCA 2')
 
-                elif input_voltage_setpoint > 5 and input_voltage_setpoint < 15:
+                # elif input_voltage_setpoint > 5 and input_voltage_setpoint < 15:
 
-                    lecroy.write('CH1:SCA 5')  # set vertical scale to 10V
+                #     lecroy.write('CH1:SCA 5')  # set vertical scale to 10V
 
-                elif input_voltage_setpoint > 15 and input_voltage_setpoint < 30:
+                # elif input_voltage_setpoint > 15 and input_voltage_setpoint < 30:
 
-                    lecroy.write('CH1:SCA 10')  # set vertical scale to 10V
+                #     lecroy.write('CH1:SCA 10')  # set vertical scale to 10V
 
-                elif input_voltage_setpoint > 30:
+                # elif input_voltage_setpoint > 30:
 
-                    lecroy.write('CH1:SCA 20')  # set vertical scale to 20V
+                #     lecroy.write('CH1:SCA 20')  # set vertical scale to 20V
 
-                else:
+                # else:
 
-                    lecroy.write('CH1:SCA 5')  # set vertical scale to 5V
+                #     lecroy.write('CH1:SCA 5')  # set vertical scale to 5V
 
 
 
@@ -488,6 +521,11 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
                     electronic_load_current = electronic_load.query('MEAS:CURR?')
 
                     electronic_load_voltage = electronic_load.query('MEAS:VOLT?')
+                    
+
+
+                    # Allow time for acquisition
+                    time.sleep(1)
 
                     if FRE==1:
 
@@ -497,8 +535,9 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
 
                         #width = lecroy.query(r"""vbs? 'return=app.measure.p2.out.result.value' """)
 
-                        Frequency = float(lecroy.query("MEASUrement:MEAS1:VALue?"))  # call for value and store in variable
-
+                       
+                        Frequency = float(ch1.get_val_measurement(Index=1))
+                        print(f"Measured Frequency: {Frequency} Hz")
                     #	Calculations
 
                     i_input_current = float(v_input_shunt) / float(r_input_shunt)
@@ -751,7 +790,7 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
 
                         #width = lecroy.query(r"""vbs? 'return=app.measure.p2.out.result.value' """) # **will need to make this selectable
 
-                        Frequency = float(lecroy.query("MEASUrement:MEAS1:VALue?"))  # call for value and store in variable
+                        Frequency = float(ch1.get_val_measurement(Index=1))
 
                     #	Calculations
 
@@ -1137,6 +1176,7 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
             chart_list_4.set_y_axis({'name': 'Frequency(Hz)', 'name_font': {'size': 14, 'bold': True}})
 
 
+            # Capture a screenshot for each input voltage
 
             workbook.close()
 
@@ -1151,6 +1191,7 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
             print("Test Complete")
 
         except ZeroDivisionError:
+            set_stop_flag()
 
             print('Run Again:division by zero issue')
 
@@ -1161,6 +1202,7 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
             Power_supply.turn_off_supply(supply_type)
 
         except PermissionError:
+            set_stop_flag()
 
             print('CLOSE the work book and RUN AGAIN or change work book name')
 
@@ -1171,6 +1213,7 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
             Power_supply.turn_off_supply(supply_type)
 
         except ValueError:
+            set_stop_flag()
 
             print('check scope frequency measurement')
 
