@@ -711,7 +711,7 @@ class DAQ970A:
             self._write('INIT')
             return self._query('FETCH?')
 
-
+ 
 
 if __name__ == '__main__':
     # k = Keithley6510('USB0::0x05E6::0x6510::04531298::INSTR')

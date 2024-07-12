@@ -49,7 +49,7 @@ POWER_SUPPLY_CHANNELS = [' 1', ' 2', ' 3', ' 4']
 IC_OPTIONS = ['DEFAULT', 'TDA48820A']
 
 # Test Types
-TEST_TYPES = ['Efficiency','Transient']
+TEST_TYPES = ['Efficiency','Transient','Switching Node']
 
 # Default Settings
 DEFAULT_SETTINGS = {
@@ -70,8 +70,8 @@ DEFAULT_SETTINGS = {
         'ch6': 'LDO'
     },
     'scope': {
-        'ch1': 'input V',
-        'ch2': 'SW',
+        'ch1': 'SW',
+        'ch2': 'input V',
         'ch3': 'output V',
         'ch4': 'IL',
         'ch5':'PGD',
@@ -113,8 +113,8 @@ TDA48820A_SETTINGS = {
         'ch6': 'LDO'
     },
     'scope': {
-        'ch1': 'input V',
-        'ch2': 'SW',
+        'ch1':   'SW',
+        'ch2':  'input V',
         'ch3': 'output V',
         'ch4': 'IL',
         'ch5':'PGD',

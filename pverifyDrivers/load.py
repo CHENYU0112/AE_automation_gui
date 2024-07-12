@@ -113,24 +113,34 @@ class Chroma631x(LoadBase, chr6310Simple):
         self._write(f'CURR:DYN:T2 {t2}')
 
 class Chroma63600:
-
     option = None
-    ID = 'Crhoma63600'
+    ID = 'Chroma63600'
     mode = None
     currentLevel = None
 
     def __init__(self, Address, *args, **kwargs):
-        simulate = kwargs['Simulate'] if 'Simulate' in kwargs else False
-        reset = kwargs['Reset'] if 'Reset' in kwargs else True
-        self.interface = _pyvisa.ResourceManager().open_resource(Address)
+        simulate = kwargs.get('Simulate', False)
+        reset = kwargs.get('Reset', True)
+        self.cmd = _pyvisa.ResourceManager().open_resource(Address)
         if reset:
-            self.interface.write('*RST')
+            self.cmd.write('*RST')
 
     def _write(self, command):
-        self.interface.vi_write(command)
+        try:
+            self.cmd.write(command)
+         #   print(f"Sent command: {command}")
+        except Exception as e:
+            print(f"Error sending command '{command}': {str(e)}")
+            raise
 
     def _query(self, command):
-        return self.interface.vi_query(command)
+        try:
+            response = self.cmd.query(command)
+          #  print(f"Query: {command}, Response: {response.strip()}")
+            return response
+        except Exception as e:
+            print(f"Error querying '{command}': {str(e)}")
+            raise
 
     def output(self, state='OFF', *args, **kwargs):
         if state.lower() == 'off':
@@ -144,30 +154,34 @@ class Chroma63600:
         :type: string
         :return: None
         '''
-        self._write('MODE ' + str(mode))
+        self._write(f'MODE {mode}')
 
     def set_channel(self, index=1, *args, **kwargs):
-        self._write('CHAN ' + str(index))
+        self._write(f'CHAN {index}')
 
-    def set_current(self, option, value, *args, **kwargs):
+    def set_current(self, value, *args, **kwargs):
         '''
-        :param option: { STATic | DYNamic }
-        :type: string
         :param value: value of current to set
         :type: float
         :return: None
         '''
-        line = kwargs['line'] if 'line' in kwargs else 'L1'
-        self._write(f'CURR:{option}:{line} {value}')
-        self.option = option.upper()
+        self._write(f'CURR:STAT:L1 {value}')
+        self.currentLevel = float(value)
+        sleep(0.1)  # Short delay to allow the setting to take effect
+
+    def get_current(self):
+        return float(self._query('MEAS:CURR?'))
+
+    def get_voltage(self):
+        return float(self._query('MEAS:VOLT?'))
 
     def set_rise_fall(self, rise, fall, *args, **kwargs):
         '''
         :param rise: A/us
         :param fall: A/us
         '''
-        self._write(f'CURR:{self.option}:RISE {rise}')
-        self._write(f'CURR:{self.option}:FALL {fall}')
+        self._write(f'CURR:RISE {rise}')
+        self._write(f'CURR:FALL {fall}')
 
     def set_duration(self, t1, t2, *args, **kwargs):
         '''
@@ -176,94 +190,6 @@ class Chroma63600:
         '''
         self._write(f'CURR:DYN:T1 {t1}')
         self._write(f'CURR:DYN:T2 {t2}')
-
-class XBLSeries():
-
-    option = None
-    ID = 'XBLSeries'
-    mode = None
-    currentLevel = None
-
-    def __init__(self, Address, *args, **kwargs):
-        simulate = kwargs['Simulate'] if 'Simulate' in kwargs else False
-        reset = kwargs['Reset'] if 'Reset' in kwargs else True
-        self.interface = _pyvisa.ResourceManager().open_resource(Address)
-        if reset:
-            self.interface.write('*RST')
-
-    def _write(self, command, *args, **kwargs):
-        self.interface.write(command)
-
-    def _query(self, command, *args, **kwargs):
-        d = kwargs['delay'] if 'delay' in kwargs else None
-        if d:
-            return self.interface.query(command, delay=d)
-        else:
-            return self.interface.query(command)
-
-    def output(self, state='OFF', *args, **kwargs):
-        if state.lower() == 'off':
-            self._write('LOAD OFF')
-        else:
-            self._write('LOAD ON')
-
-    def set_mode(self, mode, *args, **kwargs):
-        '''
-        :param mode: load mode { CCL | CCH | CCDL | CCDH | CRL | CRH | CV }
-        :type: string
-        :return: None
-        '''
-        modes = {
-            'CCL' : 'CI',
-            'CCH' : 'CI',
-            'CCDL' : 'CI',
-            'CCDH' : 'CI',
-            'CRL' : 'CR LOW',
-            'CRH' : 'CR HIGH',
-            'CV' : 'CV',
-        }
-        self.mode = modes[mode]
-
-    def set_channel(self, index=1, *args, **kwargs):
-        # apparently no channel selection for this model
-        pass
-
-    def set_current(self, option, value, *args, **kwargs):
-        '''
-        :param option: { STATic | DYNamic }
-        :type: string
-        :param value: value of current to set
-        :type: float
-        :return: None
-        '''
-        self._write(f'{self.mode} {value}')
-        self.currentLevel = float(value)
-        self.option = option.upper()
-        sleep(1.5)
-
-    def set_rise_fall(self, rise, fall, *args, **kwargs):
-        '''
-        This model uses slew time instead of rate. To make it compatible to other models and function calls the current
-        level must be set first. Then when applying a rate in A/us the function will convert that into microseconds to
-        set the instrument correctly.
-        :param rise: A/us
-        :param fall: A/us
-        '''
-        if not self.currentLevel:
-            print('This model requires a current level to be set before setting the slew rate.')
-            return
-        riseTime = self.currentLevel / rise
-        fallTime = self.currentLevel / fall
-        self._write(f'S1 {riseTime}')
-        self._write(f'S2 {fallTime}')
-
-    def set_duration(self, t1, t2, *args, **kwargs):
-        '''
-        :param t1: ms
-        :param t2: ms
-        '''
-        self._write(f'T1 {float(t1) * 1000}')
-        self._write(f'T2 {float(t2) * 1000}')
 
 class AMETEKPLA800():
 
