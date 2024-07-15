@@ -6,19 +6,11 @@ from .utils import validate_entry, validate_vin_entry
 
 class TransientTestFrame(TestFrame):
     def __init__(self, parent, instrument_manager, selected_ic):
-        print("Initializing TransientTestFrame...")
         super().__init__(parent, instrument_manager, selected_ic)
         self.setting_frame = parent
-        self.scope_us_div_entries = []
-        self.scope_persistence_vars = []
-        self.scope_channels = []
-        self.load_entries = []
-        self.shunt_entries = []
-        self.load_level_var = tk.StringVar()
-        print("TransientTestFrame attributes initialized. Creating widgets...")
-        self.create_widgets()
-        print("TransientTestFrame widgets created.")
-
+        self.validated_values = None
+        
+        
     def create_widgets(self):
         print("Creating TransientTestFrame widgets...")
         tk.Label(self, text="Transient Test Settings", font=FONT_BOLD, bg='yellow', fg="black").place(x=5, y=5)
@@ -120,7 +112,7 @@ class TransientTestFrame(TestFrame):
         tk.Label(frame, text="E Load", font=FONT_BOLD, bg='white', fg="black").place(x=5, y=5)
         tk.Label(frame, text=self.instrument_manager.instruments['load'], font=FONT_NORMAL, bg='white', fg="black").place(x=100, y=5)
 
-        labels = [("I low", "Low time"), ("I high", "High time"), ("Raising SR", "Falling SR")]
+        labels = [("I low(A)", "Low time(uS)"), ("I high(A)", "High time(uS)"), ("R SR(A/us)", "F SR(A/us)")]
         self.load_entries = []
         for i, (label1, label2) in enumerate(labels):
             tk.Label(frame, text=label1, font=FONT_NORMAL, bg='white', fg="black").place(x=5, y=35 + i*30)
@@ -140,15 +132,6 @@ class TransientTestFrame(TestFrame):
 
 
 
-
-    def create_transient_load_entries(self, parent):
-        labels = ["Low Load (A):", "High Load (A):", "Rise Time (µs):", "Fall Time (µs):", "Frequency (Hz):"]
-        self.load_entries = []
-        
-        for i, label in enumerate(labels):
-            tk.Label(parent, text=label, font=FONT_NORMAL, bg='white', fg="black").place(x=5, y=40 + i*30)
-            entry = self.create_entry(parent, "", 40 + i*30, x=130, width=10)
-            self.load_entries.append(entry)
 
     def create_entry(self, parent, label, y, x=None, width=8, validate_command=None):
         if label:
@@ -189,37 +172,37 @@ class TransientTestFrame(TestFrame):
         self.pw_ch_vin.set(settings['power_supply']['vin_channel'])
         
         # VCC
-        self.vcc_var.set(False)
+        self.vcc_var.set(settings['power_supply'].get('vcc_enabled', False))
         self.vcc.delete(0, tk.END)
-        self.vcc.insert(0, "0")
+        self.vcc.insert(0, str(settings['power_supply'].get('vcc', 0)))
         self.icc.delete(0, tk.END)
-        self.icc.insert(0, "0")
-        self.pw_ch_vcc.set("")
+        self.icc.insert(0, str(settings['power_supply'].get('icc', 0)))
+        self.pw_ch_vcc.set(settings['power_supply'].get('vcc_channel', ''))
         self.toggle_vcc_frame()
 
         # Scope
         for i, combo in enumerate(self.scope_channels, 1):
             combo.set(settings['scope'][f'ch{i}'])
+        
+        self.scope_us_div_entries[0].delete(0, tk.END)
+        self.scope_us_div_entries[0].insert(0, str(settings['scope']['default_us_div']))
+        
+        self.scope_persistence_vars[0].set(settings['scope']['default_persistence'])
 
-        # Load (You may need to adjust this based on your transient test requirements)
-        load_params = ['low_load', 'high_load', 'rise_time', 'fall_time', 'frequency']
+        # Load
+        load_params = ['i_low', 'low_time', 'i_high', 'high_time', 'rising_sr', 'falling_sr']
         for entry, param in zip(self.load_entries, load_params):
             entry.delete(0, tk.END)
-            entry.insert(0, str(settings['load'].get(param, '')))
+            entry.insert(0, str(settings['load'][param]))
+        
+        self.load_level_var.set(settings['load']['default_load_level'])
 
-        # Current Shunt
-        shunt_values = settings['current_shunt'].values()
-        for entry, value in zip(self.shunt_entries, shunt_values):
-            entry.delete(0, tk.END)
-            entry.insert(0, str(value))
-            
-        for entry in self.scope_us_div_entries:
-            entry.delete(0, tk.END)
-            entry.insert(0, settings['scope'].get('default_us_div', '1'))
-            
-        for var in self.scope_persistence_vars:
-            var.set(settings['scope'].get('default_persistence', False))
-        self.load_level_var.set(settings['load'].get('default_load_level', 'L'))
+        # Current Shunt (if applicable)
+        if 'current_shunt' in settings:
+            shunt_values = settings['current_shunt'].values()
+            for entry, value in zip(self.shunt_entries, shunt_values):
+                entry.delete(0, tk.END)
+                entry.insert(0, str(value))
 
     def get_values(self):
         def safe_float(value, field_name):
@@ -228,161 +211,87 @@ class TransientTestFrame(TestFrame):
             except ValueError:
                 raise ValueError(f"Invalid input for {field_name}")
 
-        input_v = safe_float(self.vin.get(), "Input Voltage (Input_V)")
-        input_i = safe_float(self.iin.get(), "Input Current (Input_I)")
-        power_supply_channel = self.pw_ch_vin.get()
-        
-        scope_channels = [combo.get() for combo in self.scope_channels]
-        
-        # Access protection values from SettingFrame
-        max_vin = safe_float(self.setting_frame.max_vin.get(), "Protective Maximum Input Voltage (MAX_Vin)")
-        max_iin = safe_float(self.setting_frame.max_iin.get(), "Protective Maximum Input Current (MAX_Iin)")
-        max_iout = safe_float(self.setting_frame.max_iout.get(), "Protective Maximum Output Current (MAX_Iout)")
-
-        load_params = ['low_load', 'high_load', 'rise_time', 'fall_time', 'frequency']
-        load_values = [safe_float(entry.get(), f"{param.replace('_', ' ').title()}") for entry, param in zip(self.load_entries, load_params)]
-
-        input_shunt_max_voltage = safe_float(self.shunt_entries[0].get(), "Input Shunt Max Voltage")
-        input_shunt_max_current = safe_float(self.shunt_entries[1].get(), "Input Shunt Max Current")
-        output_shunt_max_voltage = safe_float(self.shunt_entries[2].get(), "Output Shunt Max Voltage")
-        output_shunt_max_current = safe_float(self.shunt_entries[3].get(), "Output Shunt Max Current")
-
         values = {
             'selected_ic': self.selected_ic,
-            'input_v': input_v,
-            'input_i': input_i,
-            'power_supply_channel': power_supply_channel,
-            'scope_channels': scope_channels,       
-            'scope_us_div': [entry.get() for entry in self.scope_us_div_entries],
-            'scope_persistence': [var.get() for var in self.scope_persistence_vars],
-            'load_level': self.load_level_var.get(),
-            'max_vin': max_vin,
-            'max_iin': max_iin,
-            'max_iout': max_iout,
-            'load': dict(zip(load_params, load_values)),
-            'shunt_settings': [
-                input_shunt_max_voltage,
-                input_shunt_max_current,
-                output_shunt_max_voltage,
-                output_shunt_max_current
-            ]
+            'power_supply': {
+                'vin': safe_float(self.vin.get(), "Input Voltage (Vin)"),
+                'iin': safe_float(self.iin.get(), "Input Current (Iin)"),
+                'vin_channel': self.pw_ch_vin.get(),
+                'vcc_enabled': self.vcc_var.get(),
+                'vcc': safe_float(self.vcc.get(), "VCC Voltage") if self.vcc_var.get() else 0,
+                'icc': safe_float(self.icc.get(), "VCC Current") if self.vcc_var.get() else 0,
+                'vcc_channel': self.pw_ch_vcc.get() if self.vcc_var.get() else ''
+            },
+            'scope': {
+                f'ch{i+1}': combo.get() for i, combo in enumerate(self.scope_channels)
+            },
+            'scope_us_div': safe_float(self.scope_us_div_entries[0].get(), "Scope us/div"),
+            'scope_persistence': self.scope_persistence_vars[0].get(),
+            'load': {
+                'i_low': safe_float(self.load_entries[0].get(), "I low"),
+                'low_time': safe_float(self.load_entries[1].get(), "Low time"),
+                'i_high': safe_float(self.load_entries[2].get(), "I high"),
+                'high_time': safe_float(self.load_entries[3].get(), "High time"),
+                'rising_sr': safe_float(self.load_entries[4].get(), "Rising Slew Rate"),
+                'falling_sr': safe_float(self.load_entries[5].get(), "Falling Slew Rate"),
+                'load_level': self.load_level_var.get()
+            },
+            'protection': self.setting_frame.get_protection_values()
         }
 
         return values
-    
+
     def validate_values(self, values):
         try:
-            input_v = float(values['input_v'])
-            input_i = float(values['input_i'])
-
-            if input_v > MAX_INPUT_VOLTAGE or input_v < MIN_INPUT_VOLTAGE:
-                raise ValueError(f"Input voltage (Input_V) range should be between {MIN_INPUT_VOLTAGE}V~{MAX_INPUT_VOLTAGE}V")
+            # Validate Power Supply settings
+            if values['power_supply']['vin'] > MAX_INPUT_VOLTAGE or values['power_supply']['vin'] < MIN_INPUT_VOLTAGE:
+                raise ValueError(f"Input voltage (Vin) range should be between {MIN_INPUT_VOLTAGE}V~{MAX_INPUT_VOLTAGE}V")
             
-            if input_i > MAX_OUTPUT_CURRENT:
-                raise ValueError(f"Input current (Input_I) should not exceed {MAX_OUTPUT_CURRENT}A")
+            if values['power_supply']['iin'] > MAX_OUTPUT_CURRENT:
+                raise ValueError(f"Input current (Iin) should not exceed {MAX_OUTPUT_CURRENT}A")
 
-            # Validate load settings
-            low_load = float(values['load']['low_load'])
-            high_load = float(values['load']['high_load'])
-            rise_time = float(values['load']['rise_time'])
-            fall_time = float(values['load']['fall_time'])
-            frequency = float(values['load']['frequency'])
+            if values['power_supply']['vcc_enabled']:
+                if values['power_supply']['vcc'] > MAX_INPUT_VOLTAGE or values['power_supply']['vcc'] < 0:
+                    raise ValueError(f"VCC voltage range should be between 0V~{MAX_INPUT_VOLTAGE}V")
+                if values['power_supply']['icc'] > MAX_OUTPUT_CURRENT or values['power_supply']['icc'] < 0:
+                    raise ValueError(f"VCC current should be between 0A~{MAX_OUTPUT_CURRENT}A")
 
-            if low_load >= high_load:
-                raise ValueError("Low load should be less than high load")
-            
-            if rise_time <= 0 or fall_time <= 0 or frequency <= 0:
-                raise ValueError("Rise time, fall time, and frequency should be greater than 0")
-
-            # Validate protection settings
-            max_vin = float(values['max_vin'])
-            max_iin = float(values['max_iin'])
-            max_iout = float(values['max_iout'])
-
-            if max_vin < input_v:
-                raise ValueError("Max input voltage protection should be greater than or equal to input voltage")
-            
-            if max_iin < input_i:
-                raise ValueError("Max input current protection should be greater than or equal to input current")
-            
-            if max_iout < high_load:
-                raise ValueError("Max output current protection should be greater than or equal to high load")
-
-            # Validate shunt settings
-            input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_voltage, output_shunt_max_current = values['shunt_settings']
-
-            if input_shunt_max_current < input_i:
-                raise ValueError("Input shunt max current should be greater than or equal to input current")
-            
-            if output_shunt_max_current < high_load:
-                raise ValueError("Output shunt max current should be greater than or equal to high load")
-
-           # Validate scope channel assignments
-            scope_channels = values['scope_channels']
+            # Validate Scope settings
+            scope_channels = list(values['scope'].values())
             if len(set(scope_channels)) != len(scope_channels):
                 raise ValueError("Scope channels must be unique")
             if len(scope_channels) != 6:
                 raise ValueError("All 6 scope channels must be assigned")
-            
-            for us_div in values['scope_us_div']:
-                if not us_div:
-                    raise ValueError("All scope us/div fields must be filled")
-                float(us_div)  # Check if it's a valid float
-            
-            if not values['load_level']:
+
+            if values['scope_us_div'] <= 0:
+                raise ValueError("Scope us/div must be greater than 0")
+
+            # Validate Load settings
+            load = values['load']
+            if load['i_low'] >= load['i_high']:
+                raise ValueError("Low load current must be less than high load current")
+            if load['low_time'] <= 0 or load['high_time'] <= 0:
+                raise ValueError("Low time and high time must be greater than 0")
+            if load['rising_sr'] <= 0 or load['falling_sr'] <= 0:
+                raise ValueError("Rising and falling slew rates must be greater than 0")
+            if not load['load_level']:
                 raise ValueError("Load level must be selected")
-            
-        except KeyError as e:
-            messagebox.showwarning("Warning", f"Missing required field: {str(e)}")
+
+            # Validate protection settings
+            protection = values['protection']
+            if protection['max_vin'] < values['power_supply']['vin']:
+                raise ValueError("Max input voltage protection must be greater than or equal to input voltage")
+            if protection['max_iin'] < values['power_supply']['iin']:
+                raise ValueError("Max input current protection must be greater than or equal to input current")
+            if protection['max_iout'] < load['i_high']:
+                raise ValueError("Max output current protection must be greater than or equal to high load current")
+
+            return True
+
         except ValueError as e:
-            messagebox.showwarning("Warning", str(e))
+            messagebox.showwarning("Validation Error", str(e))
+            return False
         except Exception as e:
-            messagebox.showwarning("Warning", f"An unexpected error occurred: {str(e)}")
+            messagebox.showwarning("Error", f"An unexpected error occurred: {str(e)}")
+            return False
 
-        return False
-
-    def update_protection_values(self):
-        # This method can be called to update the protection values from the SettingFrame
-        protection_values = self.setting_frame.get_protection_values()
-        self.max_vin = protection_values['max_vin']
-        self.max_iin = protection_values['max_iin']
-        self.max_iout = protection_values['max_iout']
-
-    def prepare_for_test(self):
-        # This method can be called before starting the test to ensure all settings are up to date
-        self.update_protection_values()
-        # Add any other pre-test preparations here
-
-    def get_test_parameters(self):
-        # This method returns a dictionary of all parameters needed for the transient test
-        values = self.get_values()
-        test_params = {
-            'input_voltage': values['input_v'],
-            'input_current': values['input_i'],
-            'power_supply_channel': values['power_supply_channel'],
-            'scope_channels': values['scope_channels'],
-            'load_settings': values['load'],
-            'protection': {
-                'max_vin': values['max_vin'],
-                'max_iin': values['max_iin'],
-                'max_iout': values['max_iout']
-            },
-            'shunt_settings': values['shunt_settings']
-        }
-        return test_params
-
-    def lock_frame(self):
-        # Disable all input fields when the test is running
-        for widget in self.winfo_children():
-            if isinstance(widget, (tk.Entry, ttk.Combobox)):
-                widget.config(state='disabled')
-
-    def unlock_frame(self):
-        # Enable all input fields when the test is not running
-        for widget in self.winfo_children():
-            if isinstance(widget, (tk.Entry, ttk.Combobox)):
-                widget.config(state='normal')
-
-    def reset_to_defaults(self):
-        # Reset all fields to their default values
-        self.set_default_values(IC_DEFAULT_SETTINGS.get(self.selected_ic, DEFAULT_SETTINGS))

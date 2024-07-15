@@ -80,8 +80,10 @@ class EfficiencyTab(TestTab):
             return
 
         try:
-            settings = self.setting_frame.current_test_frame.get_values()
-            validated_settings = self.validate_eff_data(settings)
+            validated_settings = self.setting_frame.current_test_frame.get_values()
+            if not validated_settings:
+                messagebox.showerror("Error", "No validated settings available. Please set values in the Setting Frame.")
+                return
             
             self.test_running = True
             self.start_button.config(state=tk.DISABLED)
@@ -111,11 +113,6 @@ class EfficiencyTab(TestTab):
             _stop_flag = False
             self.print_validated_settings(validated_settings)
             
-            # Debug print
-            print("Validated settings:")
-            for key, value in validated_settings.items():
-                print(f"{key}: {value}")
-            
             # Run the test and get results
             try:
                 sys.stderr.write("Debug: About to call eff function\n")
@@ -130,7 +127,7 @@ class EfficiencyTab(TestTab):
                     error_message += f"{key}: {value}\n"
                 print(error_message)
                 self.update_results(error_message)
-                raise  # Re-raise the exception to be caught by the outer try-except
+                raise
 
             self.update_results(f"Stop flag set to: {get_stop_flag()}")
             if get_stop_flag():
@@ -174,7 +171,7 @@ class EfficiencyTab(TestTab):
     def setup_progress_bar(self, settings):
         input_v_count = len(settings['Input_V'])
         low_load_steps = len(np.arange(settings['Low_load_start'], settings['Low_load_stop'], settings['Low_load_step']))
-        high_load_steps = len(np.arange(settings['Low_load_stop'], settings['High_load_stop'] + 0.002, settings['High_load_step']))
+        high_load_steps = len(np.arange(settings['High_load_start'], settings['High_load_stop'] + 0.002, settings['High_load_step']))
         
         total_steps = input_v_count * (low_load_steps + high_load_steps)
         total_time = (low_load_steps * settings['low_load_timing'] + 
@@ -279,7 +276,7 @@ class EfficiencyTab(TestTab):
             - Stop: {validated_settings['Low_load_stop']}
 
         High Load Sweep:
-            - Start:{validated_settings['High_load_start']}
+            - Start: {validated_settings['High_load_start']}
             - Step: {validated_settings['High_load_step']}
             - Stop: {validated_settings['High_load_stop']}
 
@@ -290,121 +287,6 @@ class EfficiencyTab(TestTab):
         Frequency: {validated_settings['FRE']}
         """
         self.update_results(print_string)
-
-    def validate_eff_data(self, values):
-        try:
-            # Extract and validate shunt settings
-            shunt_settings = values['shunt_settings']
-            input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_voltage, output_shunt_max_current = shunt_settings
-            
-            # Extract and validate GPIB addresses
-            power_supply_GPIB_address = self.instrument_manager.instruments.get('supply', '')
-            data_logger_GPIB_address = self.instrument_manager.instruments.get('DAQ', '')
-            electronic_load_GPIB_address = self.instrument_manager.instruments.get('load', '')
-            lecory_usb_address = self.instrument_manager.instruments.get('o_scope', '')
-            
-            # Create a mapping for DAQ channels to numeric values
-            channel_mapping = {
-                'input V': '101',
-                'input I': '102',
-                'output V': '103',
-                'output I': '104',
-                'Vcc': '105',
-                'LDO': '106'
-            }
-
-            # Extract and validate channel assignments
-            daq_channels = values['daq_channels']
-            channel_assignments = {
-                'input_v_ch': '',
-                'input_i_ch': '',
-                'output_v_ch': '',
-                'output_i_ch': '',
-                'vcc_ch': '',
-                'ldo_ch': ''
-            }
-
-            for i, channel in enumerate(daq_channels, start=1):
-                if channel in channel_mapping:
-                    channel_key = f"{channel.lower().replace(' ', '_')}_ch"
-                    channel_assignments[channel_key] = str(100 + i)  # Convert to string to match expected type
-
-            # Ensure all channels are assigned
-            if '' in channel_assignments.values():
-                raise ValueError("Not all required channels are assigned")
-            
-            # Extract and validate maximum ratings
-            Max_input_voltage = values['max_vin']
-            Max_input_current = values['max_iin']
-            Max_load_current = values['max_iout']
-            
-            # Extract and validate load sweep parameters
-            Input_V = values['input_v']  # Wrap in list to match expected type
-            Input_I = values['input_i']
-            power_supply_channel = values['power_supply_channel']
-            # Extract and validate low load sweep
-            Low_load_start = values['low_load']['start']
-            Low_load_step = values['low_load']['step']
-            Low_load_stop = values['low_load']['stop']
-            
-            # Extract and validate high load sweep
-            High_load_start = values['high_load']['start']
-            High_load_stop = values['high_load']['stop']
-            High_load_step = values['high_load']['step']
-            
-            # Extract and validate timing parameters
-            low_load_timing = values['low_load']['delay']
-            high_load_timing = values['high_load']['delay']
-            
-            # Set FRE to 1 as it's not in the original settings
-            FRE = 1
-            
-                # Create a dictionary with all the parameters
-            eff_params = {
-                'input_shunt_max_voltage': input_shunt_max_voltage,
-                'input_shunt_max_current': input_shunt_max_current,
-                'output_shunt_max_voltage': output_shunt_max_voltage,
-                'output_shunt_max_current': output_shunt_max_current,
-                'power_supply_GPIB_address': power_supply_GPIB_address,
-                'data_logger_GPIB_address': data_logger_GPIB_address,
-                'electronic_load_GPIB_address': electronic_load_GPIB_address,
-                'lecory_usb_address': lecory_usb_address,
-                'Max_input_voltage': Max_input_voltage,
-                'Max_input_current': Max_input_current,
-                'Max_load_current': Max_load_current,
-                'Input_V': Input_V,
-                'Input_I': Input_I,
-                'power_supply_channel':power_supply_channel,
-                'Low_load_start': Low_load_start,
-                'Low_load_step': Low_load_step,
-                'Low_load_stop': Low_load_stop,
-                'High_load_start': High_load_start,
-                'High_load_stop': High_load_stop,
-                'High_load_step': High_load_step,
-                'low_load_timing': low_load_timing,
-                'high_load_timing': high_load_timing,
-                'FRE': FRE
-            }
-            
-            # Update eff_params with the correct channel assignments
-            eff_params.update(channel_assignments)
-            
-            # Validate data types
-            for key, value in eff_params.items():
-                if key in ['FRE']:
-                    if not isinstance(value, int):
-                        raise ValueError(f"{key} must be an integer")
-                elif key in ['power_supply_GPIB_address', 'data_logger_GPIB_address', 'electronic_load_GPIB_address', 'lecory_usb_address', 'input_v_ch', 'input_i_ch', 'output_v_ch', 'output_i_ch', 'vcc_ch', 'ldo_ch']:
-                    if not isinstance(value, str):
-                        raise ValueError(f"{key} must be a string")
-
-            
-            return eff_params
-        
-        except KeyError as e:
-            raise ValueError(f"Missing required parameter: {str(e)}")
-        except Exception as e:
-            raise ValueError(f"Error in validating data: {str(e)}")
 
     def generate_filename(self):
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")

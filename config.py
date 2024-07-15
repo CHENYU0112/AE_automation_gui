@@ -49,16 +49,16 @@ POWER_SUPPLY_CHANNELS = [' 1', ' 2', ' 3', ' 4']
 IC_OPTIONS = ['DEFAULT', 'TDA48820A']
 
 # Test Types
-TEST_TYPES = ['Efficiency','Transient','Switching Node']
+TEST_TYPES = ['Efficiency', 'Transient', 'Switching Node']
 
-# Default Settings
-DEFAULT_SETTINGS = {
+# Default Settings for each test type
+EFFICIENCY_DEFAULT_SETTINGS = {
     'power_supply': {
-        'vin': 12,
+        'vin': 10,
         'iin': 5,
         'vin_channel': ' 1',
         'vcc': 3.3, 
-        'icc': 5,  
+        'icc': 1,  
         'vcc_channel': ' 2'  
     },
     'daq': {
@@ -68,14 +68,6 @@ DEFAULT_SETTINGS = {
         'ch4': 'output I',
         'ch5': 'Vcc',
         'ch6': 'LDO'
-    },
-    'scope': {
-        'ch1': 'SW',
-        'ch2': 'input V',
-        'ch3': 'output V',
-        'ch4': 'IL',
-        'ch5':'PGD',
-        'ch6':'output I'
     },
     'load': {
         'low_load': {'start': 0.0, 'step': 0.5, 'stop': 1.0, 'delay': 1},
@@ -94,40 +86,69 @@ DEFAULT_SETTINGS = {
     }
 }
 
-# TDA48820A Settings
-TDA48820A_SETTINGS = {
+TRANSIENT_DEFAULT_SETTINGS = {
     'power_supply': {
         'vin': 12,
-        'iin': 3,
+        'iin': 5,
         'vin_channel': ' 1',
-        'vcc': 3,  
-        'icc': 5,  
-        'vcc_channel': ' 2'  
-    },
-    'daq': {
-        'ch1': 'input V',
-        'ch2': 'input I',
-        'ch3': 'output V',
-        'ch4': 'output I',
-        'ch5': 'Vcc',
-        'ch6': 'LDO'
+        'vcc': 3.3,
+        'icc': 1,
+        'vcc_channel': ' 2'
     },
     'scope': {
-        'ch1':   'SW',
-        'ch2':  'input V',
+        'ch1': 'SW',
+        'ch2': 'input V',
         'ch3': 'output V',
         'ch4': 'IL',
-        'ch5':'PGD',
-        'ch6':'output I'
+        'ch5': 'PGD',
+        'ch6': 'output I',
+        'default_us_div': 1,
+        'default_persistence': False
     },
     'load': {
-        'low_load': {'start': 0.0, 'step': 0.2, 'stop': 1.0, 'delay': 1},
-        'high_load': {'start': 1.0, 'step': 0.5, 'stop': 3.0, 'delay': 1}
+        'i_low': 1,
+        'i_high': 3,
+        'low_time': 100,
+        'high_time': 100,
+        'rising_sr': 1,
+        'falling_sr': 1,
+        'default_load_level': 'L'
     },
     'protection': {
-        'max_vin': 14,
-        'max_iin': 4,
-        'max_iout': 15
+        'max_vin': 16,
+        'max_iin': 6,
+        'max_iout': 20
+    }
+}
+
+SWITCHING_NODE_DEFAULT_SETTINGS = {
+    'power_supply': {
+        'vin': 12,
+        'iin': 5,
+        'vin_channel': ' 1',
+        'vcc': 3.3,
+        'icc': 1,
+        'vcc_channel': ' 2'
+    },
+    'scope': {
+        'ch1': 'SW',
+        'ch2': 'input V',
+        'ch3': 'output V',
+        'ch4': 'IL',
+        'ch5': 'PGD',
+        'ch6': 'output I',
+        'default_us_div': 0.1,
+        'default_persistence': True
+    },
+    'load': {
+        'low_load': 1,
+        'high_load': 15,
+        'load_step': 1
+    },
+    'protection': {
+        'max_vin': 16,
+        'max_iin': 6,
+        'max_iout': 20
     },
     'current_shunt': {
         'input_max_v': 0.1,
@@ -137,11 +158,97 @@ TDA48820A_SETTINGS = {
     }
 }
 
+# Default Settings
+DEFAULT_SETTINGS = {
+    'Efficiency': EFFICIENCY_DEFAULT_SETTINGS,
+    'Transient': TRANSIENT_DEFAULT_SETTINGS,
+    'Switching Node': SWITCHING_NODE_DEFAULT_SETTINGS
+}
+
+# TDA48820A Settings
+TDA48820A_SETTINGS = {
+    'Efficiency': {
+        'power_supply': {
+            'vin': 12,
+            'iin': 3,
+            'vin_channel': ' 1',
+            'vcc': 3,  
+            'icc': 1,  
+            'vcc_channel': ' 2'  
+        },
+        'daq': {
+            'ch1': 'input V',
+            'ch2': 'input I',
+            'ch3': 'output V',
+            'ch4': 'output I',
+            'ch5': 'Vcc',
+            'ch6': 'LDO'
+        },
+        'load': {
+            'low_load': {'start': 0.0, 'step': 0.2, 'stop': 1.0, 'delay': 1},
+            'high_load': {'start': 1.0, 'step': 0.5, 'stop': 3.0, 'delay': 1}
+        },
+        'protection': {
+            'max_vin': 14,
+            'max_iin': 4,
+            'max_iout': 15
+        },
+        'current_shunt': {
+            'input_max_v': 0.1,
+            'input_max_i': 5,
+            'output_max_v': 0.1,
+            'output_max_i': 20
+        }
+    },
+    'Transient': {
+        'power_supply': {
+            'vin': 12,
+            'iin': 3,
+            'vin_channel': ' 1',
+            'vcc_enabled': False,
+            'vcc': 3,  
+            'icc': 1,  
+            'vcc_channel': ' 2'  
+        },
+        'scope': {
+            'ch1': 'SW',
+            'ch2': 'input V',
+            'ch3': 'output V',
+            'ch4': 'IL',
+            'ch5': 'PGD',
+            'ch6': 'output I',
+            'default_us_div': 0.5,
+            'default_persistence': False
+        },
+        'load': {
+            'i_low': 0,
+            'i_high': 10,
+            'low_time': 500,
+            'high_time': 500,
+            'rising_sr': 8,
+            'falling_sr': 8,
+            'default_load_level': 'H'
+        },
+        'protection': {
+            'max_vin': 14,
+            'max_iin': 4,
+            'max_iout': 15
+        }
+    },
+    'Switching Node': {
+        # Add TDA48820A-specific switching node settings here
+        # For now, using the default switching node settings
+        **SWITCHING_NODE_DEFAULT_SETTINGS
+    }
+}
+
 # IC Default Settings
 IC_DEFAULT_SETTINGS = {
     'DEFAULT': DEFAULT_SETTINGS,
     'TDA48820A': TDA48820A_SETTINGS
 }
+
+
 
 # Test Configuration
 TEST_CONFIG = {

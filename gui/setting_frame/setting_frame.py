@@ -52,6 +52,8 @@ class SettingFrame(tk.Frame):
         
     def on_test_type_selected(self, event):
         self.create_test_type_frame()
+        self.set_default_values(self.ic_combo.get())
+
 
     def create_test_type_frame(self):
         if self.current_test_frame:
@@ -62,13 +64,16 @@ class SettingFrame(tk.Frame):
 
         if test_type == 'Efficiency':
             self.current_test_frame = EfficiencyTestFrame(self, self.instrument_manager, selected_ic)
-        # Add more elif statements here for future test types
         elif test_type == 'Transient':
             self.current_test_frame = TransientTestFrame(self, self.instrument_manager, selected_ic)
+        elif test_type == 'Switching Node':
+            # Add SwitchingNodeTestFrame when implemented
+            pass
 
         self.current_test_frame.place(x=25, y=240, width=470, height=780)
         
         self.set_default_values(selected_ic)
+
         
     def create_protection_frame(self):
         frame = tk.Frame(self, bd=2, relief=tk.RIDGE, bg='white')
@@ -118,7 +123,8 @@ class SettingFrame(tk.Frame):
         self.set_button.place(x=270, y=10)
 
     def set_default_values(self, ic='DEFAULT'):
-        default_settings = IC_DEFAULT_SETTINGS.get(ic, DEFAULT_SETTINGS)
+        test_type = self.test_type_combo.get()
+        default_settings = IC_DEFAULT_SETTINGS.get(ic, DEFAULT_SETTINGS)[test_type]
         if self.current_test_frame:
             self.current_test_frame.selected_ic = ic
             self.current_test_frame.set_default_values(default_settings)
@@ -128,11 +134,12 @@ class SettingFrame(tk.Frame):
 
     def reset_fields(self):
         selected_ic = self.ic_combo.get()
+        test_type = self.test_type_combo.get()
         self.set_default_values(selected_ic)
         self.unlock_frame()
         self.parent.lock_testing_frame()
         if self.current_test_frame:
-            self.current_test_frame.set_default_values(IC_DEFAULT_SETTINGS.get(selected_ic, DEFAULT_SETTINGS))
+            self.current_test_frame.set_default_values(IC_DEFAULT_SETTINGS.get(selected_ic, DEFAULT_SETTINGS)[test_type])
 
     def set_values(self):
         if not self.current_test_frame:
@@ -154,6 +161,8 @@ class SettingFrame(tk.Frame):
             self.parent.unlock_testing_frame()
 
             self.lock_frame()
+        else:
+            messagebox.showerror("Error", "Failed to get validated values")
 
     def lock_frame(self):
         self.is_locked = True

@@ -106,11 +106,11 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
 
 
 
-            ch1 = sc.GetChannel(Index=1)
+            sc_ch1 = sc.GetChannel(Index=1)
 
-            ch1.display_overlay()
+            sc_ch1.display_overlay()
                 
-            ch1.set_measurement(MeasureIndex=1, MeasureType='FREQUENCY', State='ON', Source=1)
+            sc_ch1.set_measurement(MeasureIndex=1, MeasureType='FREQUENCY', State='ON', Source=1)
 
 
 
@@ -127,7 +127,7 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
 
                 power_supply_channel.Configure_VoltageLevel(Level=input_voltage_setpoint, CurrentLimit=Input_I)
                             # Now use ProbeSetup on the channel object
-                ch1.ProbeSetup(
+                sc_ch1.ProbeSetup(
                     Coupling='DC',
                     Bandwidth='20E+06',  # 20 MHz bandwidth
                     Vrange=2.5,          # This will set to 0.25 V/div (2.5/10)
@@ -136,23 +136,23 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
                     Impedance=50,        # 50 ohm termination
                     Probe_Attn=1         # 1x probe attenuation
                 )
-                ch1.delete_measurement(1)
+                sc_ch1.delete_measurement(1)
                 # Adjust vertical scale to 2.5 V/div for channel 1
-                ch1.set_vertical_scale(1, 0.2)
+                sc_ch1.set_vertical_scale(1, 0.2)
 
                 # Set termination to 50 ohm for channel 1
-                ch1.set_termination(1, 50)
+                sc_ch1.set_termination(1, 50)
 
                 # Adjust horizontal scale to 500 ns/div
-                ch1.horscale('2us')
+                sc_ch1.horscale('2us')
 
                 # Set trigger for channel 1
-                ch1.set_trigger(ch=1, level=1.25, slope='RISE')
+                sc_ch1.set_trigger(ch=1, level=1.25, slope='RISE')
 
                 # Reset and reconfigure the frequency measurement
                 
-                ch1.set_measurement(MeasureIndex=1, MeasureType='FREQUENCY', State='ON', Source=1)
-                ch1.set_measurement(
+                sc_ch1.set_measurement(MeasureIndex=1, MeasureType='FREQUENCY', State='ON', Source=1)
+                sc_ch1.set_measurement(
                     MeasureIndex=2,
                     MeasureType='TIE',  # Time Interval Error, a common jitter measurement
                     State='ON',
@@ -161,7 +161,7 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
                 sc.set_fast_acq('ON')
                 
                 screenshot_filename = f"screenshot_Vin_{input_voltage_setpoint}V.png"
-                ch1.saveimage(screenshot_filename)
+                sc_ch1.saveimage(screenshot_filename)
 
                 print("input in loop is", input_voltage_setpoint) #********************************
 
@@ -231,7 +231,7 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
                         #width = lecroy.query(r"""vbs? 'return=app.measure.p2.out.result.value' """)
 
                        
-                        Frequency = float(ch1.get_val_measurement(Index=1))
+                        Frequency = float(sc_ch1.get_val_measurement(Index=1))
                        
                     #	Calculations
 
@@ -360,7 +360,7 @@ def eff(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_volta
 
                         #width = lecroy.query(r"""vbs? 'return=app.measure.p2.out.result.value' """) # **will need to make this selectable
 
-                        Frequency = float(ch1.get_val_measurement(Index=1))
+                        Frequency = float(sc_ch1.get_val_measurement(Index=1))
 
                     #	Calculations
 
