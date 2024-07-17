@@ -1,8 +1,8 @@
-# AE_automation_gui
+# FFU_automation_gui
 
 ## Description
 
-AE_automation_gui is a graphical user interface application for automating Power over Line (PoL) testing. It provides an interface for setting up and running efficiency and transient tests on electronic components.
+FFU_automation_gui is a graphical user interface application for automating Power over Line (PoL) testing. It provides an interface for setting up and running efficiency and transient tests on electronic components.
 
 ## Features
 
@@ -22,8 +22,7 @@ AE_automation_gui is a graphical user interface application for automating Power
 ### Setup Steps
 
 1. **Clone the repository:**
-2. **Create and activate a virtual environment:**
-3. **Install the required packages:**
+3. **Install the required packages:** pip install -r requirements.txt
 
 
 ## Usage
@@ -61,21 +60,6 @@ If you encounter issues:
 - Check the console output for error messages or exceptions
 - Verify that the correct drivers for your test instruments are installed
 
-## Contributing
-
-We welcome contributions to AE_automation_gui. Please follow these steps:
-
-1. Fork the repository
-2. Create a new branch (`git checkout -b feature/your-feature`)
-3. Make your changes
-4. Commit your changes (`git commit -am 'Add some feature'`)
-5. Push to the branch (`git push origin feature/your-feature`)
-6. Create a new Pull Request
-
-## License
-
-[Insert your license information here]
-
 ## Contact
 
-For queries or support, please contact [Your Name] at [your.email@example.com].
+For queries or support, please contact ChenYu(ChenYu.Hsieh@infineon) and MingYue(Mingyue.Zhao@infineon.com)
