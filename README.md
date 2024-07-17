@@ -24,14 +24,14 @@ FFU_automation_gui is a graphical user interface application for setting up and 
 ### Setup Steps
 
 1. **Clone the repository:**
-2. **Install the required packages: pip install -r requirements.txt**
+2. **Install the required packages:** `pip install -r requirements.txt`
 
 ## Usage
 
 ### Launching the Application
 
 1. Ensure all test instruments are properly connected to your computer.
-2. Run the main application:
+2. Run the main application: `main.py`
    
 ### Configuring Settings
 
@@ -64,5 +64,5 @@ If you encounter issues:
 ## Contact
 
 For queries or support, please contact:
-- Chen Yu (ChenYu.Hsieh@infineon.com)
-- Ming Yue (Mingyue.Zhao@infineon.com)
+- ChenYu Hsieh(ChenYu.Hsieh@infineon.com)
+- MingYue Zhao(Mingyue.Zhao@infineon.com)
