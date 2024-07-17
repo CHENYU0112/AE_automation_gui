@@ -1,87 +1,81 @@
-AE_automation_gui
-Description
+# AE_automation_gui
+
+## Description
+
 AE_automation_gui is a graphical user interface application for automating Power over Line (PoL) testing. It provides an interface for setting up and running efficiency and transient tests on electronic components.
-Features
 
-Graphical user interface for test configuration
-Support for efficiency and transient testing
-Integration with various test instruments
-Real-time test progress and results display
-Excel report generation
+## Features
 
-Installation
-Prerequisites
+- Graphical user interface for test configuration
+- Support for efficiency and transient testing
+- Integration with various test instruments
+- Real-time test progress and results display
+- Excel report generation
 
-Python 3.7 or higher
-Virtual environment (recommended)
+## Installation
 
-Setup Steps
+### Prerequisites
 
-Clone the repository:
-Copygit clone https://github.com/your-username/AE_automation_gui.git
-cd AE_automation_gui
+- Python 3.7 or higher
+- Virtual environment (recommended)
 
-Create and activate a virtual environment:
-Copypython -m venv venv
-source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+### Setup Steps
 
-Install the required packages:
-Copypip install -r requirements.txt
+1. **Clone the repository:**
+2. **Create and activate a virtual environment:**
+3. **Install the required packages:**
 
 
-Usage
+## Usage
 
-Preparation: Ensure all test instruments are properly connected to your computer.
-Launch the application:
-Copypython main.py
+### Launching the Application
 
-Main Window: The application will open with two main sections:
+1. Ensure all test instruments are properly connected to your computer.
+2. Run the main application:
 
-Setting Frame: For configuring test parameters
-Testing Frame: For running tests and viewing results
+### Configuring Settings
 
+1. In the Setting Frame:
+- Select the IC to test
+- Choose the test type (Efficiency or Transient)
+- Configure power supply, DAQ, and load settings
+- Set protection parameters
+2. Click the "Set" button to validate and apply the settings.
 
-Configuring Settings:
+### Running Tests
 
-Select the IC to test
-Choose the test type (Efficiency or Transient)
-Configure power supply, DAQ, and load settings
-Set protection parameters
-Click the "Set" button to validate and apply the settings
+1. In the Testing Frame:
+- Select the appropriate test tab (Efficiency or Transient)
+- Click "Start Test" to begin the test
+- Monitor the test progress and view results in real-time
 
+### Viewing Results
 
-Running Tests:
+- View the test log and results in the GUI
+- Find the generated Excel report in the `results` folder
 
-Select the appropriate test tab (Efficiency or Transient)
-Click "Start Test" to begin the test
-Monitor the test progress and view results in real-time
+## Troubleshooting
 
-
-Viewing Results:
-
-Check the test log and results in the GUI
-Find the generated Excel report in the results folder
-
-
-
-Troubleshooting
 If you encounter issues:
+- Ensure all devices are properly connected and powered on
+- Check the console output for error messages or exceptions
+- Verify that the correct drivers for your test instruments are installed
 
-Ensure all devices are properly connected and powered on
-Check the console output for error messages or exceptions
-Verify that the correct drivers for your test instruments are installed
+## Contributing
 
-Contributing
 We welcome contributions to AE_automation_gui. Please follow these steps:
 
-Fork the repository
-Create a new branch (git checkout -b feature/your-feature)
-Make your changes
-Commit your changes (git commit -am 'Add some feature')
-Push to the branch (git push origin feature/your-feature)
-Create a new Pull Request
+1. Fork the repository
+2. Create a new branch (`git checkout -b feature/your-feature`)
+3. Make your changes
+4. Commit your changes (`git commit -am 'Add some feature'`)
+5. Push to the branch (`git push origin feature/your-feature`)
+6. Create a new Pull Request
 
-License
+## License
+
 [Insert your license information here]
-Contact
+
+## Contact
+
 For queries or support, please contact [Your Name] at [your.email@example.com].
