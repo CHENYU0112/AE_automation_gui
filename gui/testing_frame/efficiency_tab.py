@@ -22,6 +22,8 @@ from openpyxl.chart import ScatterChart, Reference, Series
 from openpyxl.chart.marker import Marker
 import pandas as pd
 from pandastable import Table, TableModel
+import os  # Add this line
+import xlsxwriter  # Make sure this is also imported
 
 class EfficiencyTab(TestTab):
     def __init__(self, parent, instrument_manager, setting_frame):
@@ -117,7 +119,7 @@ class EfficiencyTab(TestTab):
             try:
                 sys.stderr.write("Debug: About to call eff function\n")
                 sys.stderr.flush()
-                self.results = efficiency(**validated_settings)
+                self.results = efficiency(**validated_settings,instrument_manager=self.instrument_manager)
                 sys.stderr.write("Debug: eff function completed\n")
                 sys.stderr.flush()
             except Exception as e:
@@ -247,12 +249,6 @@ class EfficiencyTab(TestTab):
             - Max Voltage: {validated_settings['output_shunt_max_voltage']}
             - Max Current: {validated_settings['output_shunt_max_current']}
 
-        GPIB Addresses:
-            - Power Supply: {validated_settings['power_supply_GPIB_address']}
-            - Data Logger: {validated_settings['data_logger_GPIB_address']}
-            - Electronic Load: {validated_settings['electronic_load_GPIB_address']}
-            - LeCroy: {validated_settings['lecory_usb_address']}
-
         Channel Assignments:
             - Input Voltage: {validated_settings['input_v_ch']}
             - Input Current: {validated_settings['input_i_ch']}
@@ -316,7 +312,7 @@ class EfficiencyTab(TestTab):
         chart.set_title({'name': title, 'name_font': {'size': 14, 'bold': True}})
         chart.set_x_axis({'name': x_title, 'major_gridlines': {'visible': True}, 'name_font': {'size': 14, 'bold': True}})
         chart.set_y_axis({'name': y_title, 'name_font': {'size': 14, 'bold': True}})
-        chart.set_legend({'position': 'right'})
+        chart.set_legend({'position': 'bottom'})
 
         colors = ['#0000FF', '#FFA500', '#008000', '#FF0000']  # Blue, Orange, Green, Red
         markers = ['circle', 'diamond', 'triangle', 'square']
@@ -333,41 +329,47 @@ class EfficiencyTab(TestTab):
             })
             row = end_row + 1
 
-        chart.set_size({'width': 720, 'height': 576})
+        chart.set_size({'width': 500, 'height': 300})
         worksheet.insert_chart(position, chart)
         return chart
 
     def create_efficiency_chart(self, workbook, worksheet, headers):
         return self.create_chart(workbook, worksheet, 'Efficiency Measurement',
                                 'Load Current(A)', 'Efficiency (%)',
-                                headers.index('electronic_load_current'), headers.index('efficiency'), 'E2', headers)
+                                headers.index('electronic_load_current'), headers.index('efficiency'), 'S2', headers)
 
     def create_load_regulation_chart(self, workbook, worksheet, headers):
         return self.create_chart(workbook, worksheet, 'Load Regulation', 
                                 'Load Current(A)', 'Output Voltage(V)', 
-                                headers.index('electronic_load_current'), headers.index('v_output_voltage'), 'E20', headers)
+                                headers.index('electronic_load_current'), headers.index('v_output_voltage'), 'S20', headers)
 
     def create_vcc_regulation_chart(self, workbook, worksheet, headers):
         return self.create_chart(workbook, worksheet, 'VCC Regulation', 
                                 'Load Current(A)', 'VCC Voltage(V)', 
-                                headers.index('electronic_load_current'), headers.index('VCC'), 'E38', headers)
+                                headers.index('electronic_load_current'), headers.index('VCC'), 'S38', headers)
 
     def create_pg_regulation_chart(self, workbook, worksheet, headers):
         return self.create_chart(workbook, worksheet, 'PG Regulation', 
                                 'Load Current(A)', 'PG Voltage(V)', 
-                                headers.index('electronic_load_current'), headers.index('PG'), 'E56', headers)
+                                headers.index('electronic_load_current'), headers.index('PG'), 'S56', headers)
 
     def create_fsw_regulation_chart(self, workbook, worksheet, headers):
         return self.create_chart(workbook, worksheet, 'FSW Regulation', 
                                 'Load Current(A)', 'Frequency(Hz)', 
-                                headers.index('electronic_load_current'), headers.index('switching_frequency'), 'E74', headers)
+                                headers.index('electronic_load_current'), headers.index('switching_frequency'), 'S74', headers)
 
     def create_excel_file(self):
+        # Create the results/efficiency directory if it doesn't exist
+        result_dir = os.path.join("results", "efficiency")
+        os.makedirs(result_dir, exist_ok=True)
+
         selected_ic = self.setting_frame.current_test_frame.selected_ic
         test_type = self.setting_frame.test_type_combo.get()
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"{selected_ic}_{test_type}_{timestamp}.xlsx"
-        workbook = xlsxwriter.Workbook(filename)
+        filepath = os.path.join(result_dir, filename)
+        
+        workbook = xlsxwriter.Workbook(filepath)
         worksheet = workbook.add_worksheet()
 
         headers = ['input_voltage_setpoint', 'VCC', 'PG', 'v_input_shunt', 'v_output_shunt',
@@ -376,9 +378,11 @@ class EfficiencyTab(TestTab):
                     'electronic_load_setpoint', 'electronic_load_current', 'electronic_load_voltage',
                     'switching_frequency']
 
+        # Write headers
         for col, header in enumerate(headers):
             worksheet.write(0, col, header)
 
+        # Write data
         row = 1
         for input_voltage, measurements in self.results.items():
             for measurement in measurements:
@@ -387,12 +391,17 @@ class EfficiencyTab(TestTab):
                     worksheet.write(row, col, measurement.get(header, ''))
                 row += 1
 
+        # Create charts
         self.create_efficiency_chart(workbook, worksheet, headers)
         self.create_load_regulation_chart(workbook, worksheet, headers)
         self.create_vcc_regulation_chart(workbook, worksheet, headers)
         self.create_pg_regulation_chart(workbook, worksheet, headers)
         self.create_fsw_regulation_chart(workbook, worksheet, headers)
 
+        # Adjust column widths
+        for i, header in enumerate(headers):
+            worksheet.set_column(i, i, 15)  # Set each column width to 15
+
         workbook.close()
-        self.update_results(f"Excel file created: {filename}")
-        self.display_excel_in_gui(filename)
+        self.update_results(f"Excel file created: {filepath}")
+        self.display_excel_in_gui(filepath)

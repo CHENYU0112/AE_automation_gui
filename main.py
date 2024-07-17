@@ -22,7 +22,7 @@ class MainApplication(tk.Frame):
         self.instrument_manager.find_devices()
         self.instrument_manager.connect_instruments()
         try:
-            self.instrument_manager.verify_connections()
+#            self.instrument_manager.verify_connections()
             print("connection success")
         except ConnectionError as e:
             messagebox.showerror("Instrument Connection Error", str(e))

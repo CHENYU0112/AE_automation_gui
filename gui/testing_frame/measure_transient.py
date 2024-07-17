@@ -1,26 +1,37 @@
-import numpy as np
+import os
 import time
+from datetime import datetime
+import numpy as np
+from openpyxl import Workbook
+from openpyxl.drawing.image import Image
+from openpyxl.styles import Font, Alignment
 from config import *
 import pyvisa
-from pverifyDrivers import _scope
-from pverifyDrivers import powsup
-from pverifyDrivers import daq
-from pverifyDrivers import load
+from pverifyDrivers import _scope, powsup, daq, load
+
 def transient(selected_ic, power_supply_settings, scope_settings, scope_persistence, scope_us_div, load_settings, protection, instrument_manager):
     print(f"Debug: transient function started for {selected_ic}")
     results = {}
     print("Transient test started")
+
+    # Create result folder
+    result_folder = os.path.join("results", "transient")
+    os.makedirs(result_folder, exist_ok=True)
+
+    # Generate unique filename for this test
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    test_name = f"Transient_Test_{selected_ic}_{timestamp}"
+    excel_file = os.path.join(result_folder, f"{test_name}.xlsx")
+
     try:
-        # Get instruments from the instrument manager
-        power_supply_address = instrument_manager.instruments.get('supply', '')
-        electronic_load_address = instrument_manager.instruments.get('load', '')
-        scope_address = instrument_manager.instruments.get('o_scope', '')
+        instruments = instrument_manager.initialize_instruments()
         
-        electronic_load = load.Chroma63600(electronic_load_address)
-        power_supply = powsup.N6705C(power_supply_address)
+        electronic_load = instruments['load']
+        power_supply = instruments['supply']
+        sc = instruments['o_scope']
+        
         power_supply_channel = power_supply.GetChannel(power_supply_settings['vin_channel'])
-        sc = _scope.TEK_MSO5XB(scope_address, Simulate=False, Reset=True)
-        
+
         # Set up power supply
         power_supply_channel.Configure_VoltageLevel(Level=power_supply_settings['vin'], CurrentLimit=power_supply_settings['iin'])
         power_supply_channel.Enable(True)
@@ -41,9 +52,9 @@ def transient(selected_ic, power_supply_settings, scope_settings, scope_persiste
         iout_ch.Enable(True)
 
         # Set up channels with provided settings and adjust vertical positions
-        sw_ch.ProbeSetup(Coupling='DC', Bandwidth='20E+06', Vrange=5, Impedance=50, Position=3.5)  # 0.5V/div, 50 ohm, 20MHz, top position
-        iout_ch.ProbeSetup(Coupling='DC', Bandwidth='120E+06', Vrange=50, Impedance=1e+6, Position=0)  # 5A/div, 1Mohm, 120MHz, middle position
-        vout_ch.ProbeSetup(Coupling='AC', Bandwidth='20E+06', Vrange=0.2, Impedance=1e+6, Position=-3.5)  # 20mV/div, 1Mohm, 20MHz, bottom position
+        sw_ch.ProbeSetup(Coupling='DC', Bandwidth='20E+06', Vrange=5, Impedance=50, Position=3.5)
+        iout_ch.ProbeSetup(Coupling='DC', Bandwidth='120E+06', Vrange=50, Impedance=1e+6, Position=0)
+        vout_ch.ProbeSetup(Coupling='AC', Bandwidth='20E+06', Vrange=0.2, Impedance=1e+6, Position=-3.5)
 
         # Set channel labels
         sc.set_channel_label(ChannelIndex=int(sw_ch_num[-1]), Label="SW", Xpos="5", Ypos="80")
@@ -62,23 +73,23 @@ def transient(selected_ic, power_supply_settings, scope_settings, scope_persiste
         sc.set_record_length(10000000)  # 10M points for higher resolution
 
         # Set measurements
-        sc.set_measurement(MeasureIndex=1, MeasureType='MAXIMUM', State='ON', Source=int(vout_ch_num[-1]))  # Vout max
-        sc.set_measurement(MeasureIndex=2, MeasureType='MINIMUM', State='ON', Source=int(vout_ch_num[-1]))  # Vout min
-        sc.set_measurement(MeasureIndex=3, MeasureType='RISETIME', State='ON', Source=int(iout_ch_num[-1]))  # Iout rise time
-        sc.set_measurement(MeasureIndex=4, MeasureType='FALLTIME', State='ON', Source=int(iout_ch_num[-1]))  # Iout fall time
+        sc.set_measurement(MeasureIndex=1, MeasureType='MAXIMUM', State='ON', Source=int(vout_ch_num[-1]))
+        sc.set_measurement(MeasureIndex=2, MeasureType='MINIMUM', State='ON', Source=int(vout_ch_num[-1]))
+        sc.set_measurement(MeasureIndex=3, MeasureType='RISETIME', State='ON', Source=int(iout_ch_num[-1]))
+        sc.set_measurement(MeasureIndex=4, MeasureType='FALLTIME', State='ON', Source=int(iout_ch_num[-1]))
         
         # Enable display overlay
         sc.display_overlay()
         
         # Setup electronic load for dynamic mode
-        electronic_load.set_mode('CCDH')  # Set to dynamic high mode
-        electronic_load._write(f'CURR:DYN:L1 {load_settings["i_low"]}')  # Set low current
-        electronic_load._write(f'CURR:DYN:L2 {load_settings["i_high"]}')  # Set high current
-        electronic_load._write(f'CURR:DYN:RISE MAX')  # Set rising slew rate
-        electronic_load._write(f'CURR:DYN:FALL MAX')  # Set falling slew rate
-        electronic_load._write(f'CURR:DYN:T1 {load_settings["low_time"]}us')  # Set T1 duration
-        electronic_load._write(f'CURR:DYN:T2 {load_settings["high_time"]}us')  # Set T2 duration
-        electronic_load._write('CURR:DYN:REP 0')  # Set to continuous repeat
+        electronic_load.set_mode('CCDH')
+        electronic_load._write(f'CURR:DYN:L1 {load_settings["i_low"]}')
+        electronic_load._write(f'CURR:DYN:L2 {load_settings["i_high"]}')
+        electronic_load._write(f'CURR:DYN:RISE MAX')
+        electronic_load._write(f'CURR:DYN:FALL MAX')
+        electronic_load._write(f'CURR:DYN:T1 {load_settings["low_time"]}us')
+        electronic_load._write(f'CURR:DYN:T2 {load_settings["high_time"]}us')
+        electronic_load._write('CURR:DYN:REP 0')
 
         # Start the load cycling
         electronic_load.output('ON')
@@ -89,12 +100,6 @@ def transient(selected_ic, power_supply_settings, scope_settings, scope_persiste
         # Capture waveform
         sc.run()
         time.sleep((load_settings['low_time'] + load_settings['high_time']) / 1e6 * 5)  # Capture multiple cycles
-
-        # Save full waveform image
-        sc.set_screen_text(text=f"I low: {load_settings['i_low']}A, I high: {load_settings['i_high']}A", text_no=1, xpos="10", ypos="20")
-        sc.set_screen_text(text=f"Low time: {load_settings['low_time']}us, High time: {load_settings['high_time']}us", text_no=2, xpos="10", ypos="25")
-        sc.saveimage("transient_full_cycle.png")
-        
         # Analyze results
         vout_max = float(sc.get_max_measurement(Index=1))
         vout_min = float(sc.get_min_measurement(Index=2))
@@ -109,6 +114,39 @@ def transient(selected_ic, power_supply_settings, scope_settings, scope_persiste
         rise_time_us = rise_time * 1e6
         fall_time_us = fall_time * 1e6
 
+        print("Capturing full ...")
+        # Save full waveform image
+        sc.set_screen_text(text=f"I low: {load_settings['i_low']}A, I high: {load_settings['i_high']}A", text_no=1, xpos="10", ypos="20")
+        sc.set_screen_text(text=f"Low time: {load_settings['low_time']}us, High time: {load_settings['high_time']}us", text_no=2, xpos="10", ypos="25")
+        full_cycle_image = os.path.join(result_folder, f"{test_name}_full_cycle.png")
+        sc.saveimage(full_cycle_image)
+        
+        # Capture rising edge
+        print("Capturing rising edge...")
+        sc._write(f'HOR:SCALE 10e-6')  # Zoom in 10x
+        sc.Trigger_Edge(Level=trigger_level, Slope='RISE', Coupling='DC', ChannelIndex=int(iout_ch_num[-1]))
+        sc.run()
+        time.sleep(1)
+        sc.set_screen_text(text="Rising Edge", text_no=3, xpos="10", ypos="30")
+        rising_edge_image = os.path.join(result_folder, f"{test_name}_rising_edge.png")
+        sc.saveimage(rising_edge_image)
+        
+        # Capture falling edge
+        print("Capturing falling edge...")
+        sc._write(f'HOR:SCALE 10e-6')  # Zoom in 10x
+        sc.Trigger_Edge(Level=trigger_level, Slope='FALL', Coupling='DC', ChannelIndex=int(iout_ch_num[-1]))
+        sc.run()
+        time.sleep(1)
+        sc.set_screen_text(text="Falling Edge", text_no=3, xpos="10", ypos="30")
+        falling_edge_image = os.path.join(result_folder, f"{test_name}_falling_edge.png")
+        sc.saveimage(falling_edge_image)
+        
+        # Reset scope settings
+        sc._write(f'HOR:SCALE {scope_us_div}e-6')
+        sc._write('HOR:POS 50')
+        sc.set_screen_text(text="", text_no=3)
+
+
         results = {
             'overshoot': f"{overshoot_mv:.2f} mV",
             'undershoot': f"{undershoot_mv:.2f} mV",
@@ -116,9 +154,57 @@ def transient(selected_ic, power_supply_settings, scope_settings, scope_persiste
             'fall_time': f"{fall_time_us:.2f} µs"
         }
 
+        # Create Excel file
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Transient Test Results"
+
+        # Add test information
+        ws['A1'] = "Transient Test Results"
+        ws['A1'].font = Font(size=16, bold=True)
+        ws['A3'] = f"Test Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        ws['A4'] = f"IC: {selected_ic}"
+
+        # Add settings information
+        ws['A6'] = "Test Settings"
+        ws['A6'].font = Font(size=14, bold=True)
+        ws['A7'] = f"Input Voltage: {power_supply_settings['vin']} V"
+        ws['A8'] = f"Input Current Limit: {power_supply_settings['iin']} A"
+        ws['A9'] = f"Low Load Current: {load_settings['i_low']} A"
+        ws['A10'] = f"High Load Current: {load_settings['i_high']} A"
+        ws['A11'] = f"Low Time: {load_settings['low_time']} µs"
+        ws['A12'] = f"High Time: {load_settings['high_time']} µs"
+
+        # Add results
+        ws['A14'] = "Test Results"
+        ws['A14'].font = Font(size=14, bold=True)
+        ws['A15'] = f"Overshoot: {results['overshoot']}"
+        ws['A16'] = f"Undershoot: {results['undershoot']}"
+        ws['A17'] = f"Rise Time: {results['rise_time']}"
+        ws['A18'] = f"Fall Time: {results['fall_time']}"
+
+        # Add images
+        img_row = 25
+        for img_file, title in [(full_cycle_image, "Full Cycle"), (rising_edge_image, "Rising Edge"), (falling_edge_image, "Falling Edge")]:
+            img = Image(img_file)
+            img.width = 1200
+            img.height = 600
+            ws.add_image(img, f'A{img_row}')
+            ws[f'A{img_row-3}'] = title
+            ws[f'A{img_row-3}'].font = Font(size=12, bold=True)
+            img_row += 40
+
+        # Save Excel file
+        wb.save(excel_file)
 
         print("Transient test completed")
-  
+        print(f"Results saved to {excel_file}")
+
+        
+        # Delete image files
+        for img_file in [full_cycle_image, rising_edge_image, falling_edge_image]:
+            if os.path.exists(img_file):
+                os.remove(img_file)
 
     except Exception as e:
         print(f"An error occurred: {str(e)}")
@@ -130,8 +216,12 @@ def transient(selected_ic, power_supply_settings, scope_settings, scope_persiste
             electronic_load.output('OFF')
         if 'power_supply_channel' in locals():
             power_supply_channel.Enable(False)
-        sc.set_screen_text(text="", text_no=1)  # Clear text annotations
-        sc.set_screen_text(text="", text_no=2)
+        if 'sc' in locals():
+            sc.set_screen_text(text="", text_no=1)
+            sc.set_screen_text(text="", text_no=2)
         print("Test ended, instruments turned off")
 
     return results
+
+
+

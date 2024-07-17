@@ -22,14 +22,6 @@ FONT_BOLD = ("times new roman", 12, "bold")
 FONT_TITLE = ("times new roman", 25, "bold")
 BUTTON_FONT = ("Courier New", 12, "bold")
 
-# Instrument Categories
-INSTRUMENT_CATEGORIES = {
-    'supply': ['E3649A', '62012', '62006P', 'N6705C'],
-    'o_scope': ['HDO6104A', 'MSO56', 'MSO54'],
-    'load': ['63600'],
-    'DAQ': ['34970', 'DAQ973'],
-    'meter': ['34461']
-}
 
 # Validation Constants
 MIN_INPUT_VOLTAGE = 4
@@ -266,11 +258,45 @@ TEST_CONFIG = {
     'FRE': 1
 }
 
+# Updated INSTRUMENT_ADDRESSES
 INSTRUMENT_ADDRESSES = {
-    'supply': "USB0::0x2A8D::0x0F02::MY56007118::INSTR",  # power supply
-    'load': "USB0::0x0A69::0x083E::636005007924::INSTR",  # load
-    'DAQ': "USB0::0x2A8D::0x8501::MY59005729::INSTR",  # DAQ
-    'o_scope': "USB0::0x0699::0x0522::B027098::INSTR"  # oscilloscope
+    #supply
+    'Keithley_2230-30-6': "USB0::0x05E6::0x2230::8052250147776700086::INSTR",
+    'Keysight_E3633A': "USB0::0x2A8D::0x3302::MY61000357::INSTR",
+    'Keysight_N6705C': "USB0::0x2A8D::0x0F02::MY56006352::INSTR",
+    'Keithley_2260B-30-108': "ASRL4::INSTR",
+    'Keithley_2230G-30-1': "USB0::0x05E6::0x2230::9209788::INSTR",
+    
+    #meter
+    'Keysight_2461': "USB0::0x05E6::0x2461::04574506::INSTR",
+    'Keysight_34465A': "USB0::0x2A8D::0x0101::MY60085233::INSTR",
+    
+    #scope
+    'Tektronix_MDO4104C': "USB0::0x0699::0x0456::B021134::INSTR",
+    'Tektronix_MSO54': "USB0::0x0699::0x0522::B013692::INSTR",
+    'Teledyne_T3AFG120': "USB0::0xF4ED::0xEE3A::T010ZC21190190::INSTR",
+    
+    #function generator
+    'Teledyne_8108_HDO': "USB0::0x05FF::0x1023::5004N60791::INSTR",
+    'Tektronix_AFG31152': "USB0::0x0699::0x035C::B010673::INSTR",
+    
+    #e-load
+    'Keysight_EL34243A': "USB0::0x2A8D::0x3902::MY61001578::INSTR",
+    'Keithley_2380-120-60': "ASRL3::INSTR, Address=1",
+    'Ametek_PLA800-60-300': "ASRL3::INSTR, Address=4",
+    'Chroma_Electronic_Load': "USB0::0x0A69::0x0879::639034L01393::INSTR",
+    
+    #DAQ
+    'Keithley_6510' : "USB0::0x05E6::0x6510::04569274::INSTR"
+}
+
+# Instrument Categories
+INSTRUMENT_CATEGORIES = {
+    'supply': ['2230', 'E3633A', '2260B', 'N6705C', '2230G'],
+    'o_scope': ['HDO6104A', 'MSO56', 'MSO54' ,'MDO4104C'  ,'T3AFG120'],
+    'load': ['63600' ,'EL34243A' , '2380' ,'PLA800'],
+    'DAQ': ['34970', 'DAQ973' ,'DAQ6510'],
+    'meter': ['2461', '34465A']
 }
 
 CHANNELS = {

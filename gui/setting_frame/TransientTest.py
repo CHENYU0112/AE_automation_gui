@@ -35,7 +35,7 @@ class TransientTestFrame(TestFrame):
         frame.place(x=5, y=50, width=460, height=140)
         
         tk.Label(frame, text="Power Supply", font=FONT_BOLD, bg='white', fg="black").place(x=5, y=5)
-        tk.Label(frame, text=self.instrument_manager.instruments['supply'], font=FONT_NORMAL, bg='white', fg="black").place(x=100, y=5)
+        tk.Label(frame, text=self.instrument_manager.get_instrument_model('supply'), font=FONT_NORMAL, bg='white', fg="black").place(x=110, y=5)
 
         tk.Label(frame, text="Vin(V)", font=FONT_NORMAL, bg='white', fg="black").place(x=5, y=35)
         self.vin = self.create_entry(frame, "", 35, x=60, width=10)
@@ -73,7 +73,7 @@ class TransientTestFrame(TestFrame):
 
     def create_scope_frame(self, frame):
         tk.Label(frame, text="Oscilloscope", font=FONT_BOLD, bg='white', fg="black").place(x=5, y=5)
-        tk.Label(frame, text=self.instrument_manager.instruments['o_scope'], font=FONT_NORMAL, bg='white', fg="black").place(x=100, y=5)
+        tk.Label(frame, text=self.instrument_manager.get_instrument_model('o_scope'), font=FONT_NORMAL, bg='white', fg="black").place(x=110, y=5)
 
        
         
@@ -110,7 +110,7 @@ class TransientTestFrame(TestFrame):
         frame.place(x=5, y=560, width=460, height=160)
         
         tk.Label(frame, text="E Load", font=FONT_BOLD, bg='white', fg="black").place(x=5, y=5)
-        tk.Label(frame, text=self.instrument_manager.instruments['load'], font=FONT_NORMAL, bg='white', fg="black").place(x=100, y=5)
+        tk.Label(frame, text=self.instrument_manager.get_instrument_model('load'), font=FONT_NORMAL, bg='white', fg="black").place(x=110, y=5)
 
         labels = [("I low(A)", "Low time(uS)"), ("I high(A)", "High time(uS)"), ("R SR(A/us)", "F SR(A/us)")]
         self.load_entries = []

@@ -22,7 +22,7 @@ class EfficiencyTestFrame(TestFrame):
         frame.place(x=5, y=30, width=450, height=150)
         
         tk.Label(frame, text="Power_Supply", font=FONT_BOLD, bg='white', fg="black").place(x=5, y=5)
-        tk.Label(frame, text=self.instrument_manager.instruments['supply'], font=FONT_BOLD, bg='white', fg="black").place(x=115, y=5)
+        tk.Label(frame, text=self.instrument_manager.get_instrument_model('supply'), font=FONT_NORMAL, bg='white', fg="black").place(x=110, y=5)
 
         self.vin_frame = tk.Frame(frame, bg='white')
         self.vin_frame.place(x=5, y=35, width=230, height=100)
@@ -53,7 +53,7 @@ class EfficiencyTestFrame(TestFrame):
         frame.place(x=5, y=190, width=450, height=220)
         
         tk.Label(frame, text="DAQ", font=FONT_BOLD, bg='white', fg="black").place(x=5, y=5)
-        tk.Label(frame, text=self.instrument_manager.instruments['DAQ'], font=FONT_BOLD, bg='white', fg="black").place(x=115, y=5)
+        tk.Label(frame, text=self.instrument_manager.get_instrument_model('DAQ'), font=FONT_NORMAL, bg='white', fg="black").place(x=110, y=5)
 
         self.daq_channels = []
         for i in range(1, 7):
@@ -68,7 +68,7 @@ class EfficiencyTestFrame(TestFrame):
         frame.place(x=5, y=420, width=450, height=200)
         
         tk.Label(frame, text="E Load", font=FONT_BOLD, bg='white', fg="black").place(x=5, y=5)
-        tk.Label(frame, text=self.instrument_manager.instruments['load'], font=FONT_BOLD, bg='white', fg="black").place(x=110, y=5)
+        tk.Label(frame, text=self.instrument_manager.get_instrument_model('load'), font=FONT_NORMAL, bg='white', fg="black").place(x=110, y=5)
         tk.Label(frame, text="Low Load", font=FONT_BOLD, bg='white', fg="black").place(x=90, y=30)
         tk.Label(frame, text="High Load", font=FONT_BOLD, bg='white', fg="black").place(x=270, y=30)
 
@@ -247,10 +247,6 @@ class EfficiencyTestFrame(TestFrame):
                 'input_shunt_max_current': shunt_settings[1],
                 'output_shunt_max_voltage': shunt_settings[2],
                 'output_shunt_max_current': shunt_settings[3],
-                'power_supply_GPIB_address': self.instrument_manager.instruments.get('supply', ''),
-                'data_logger_GPIB_address': self.instrument_manager.instruments.get('DAQ', ''),
-                'electronic_load_GPIB_address': self.instrument_manager.instruments.get('load', ''),
-                'lecory_usb_address': self.instrument_manager.instruments.get('o_scope', ''),
                 'Max_input_voltage': max_vin,
                 'Max_input_current': max_iin,
                 'Max_load_current': max_iout,
@@ -276,9 +272,6 @@ class EfficiencyTestFrame(TestFrame):
                 if key == 'FRE':
                     if not isinstance(value, int):
                         raise ValueError(f"{key} must be an integer")
-                elif key in ['power_supply_GPIB_address', 'data_logger_GPIB_address', 'electronic_load_GPIB_address', 'lecory_usb_address'] + list(channel_assignments.keys()):
-                    if not isinstance(value, str):
-                        raise ValueError(f"{key} must be a string")
 
             return eff_params
 

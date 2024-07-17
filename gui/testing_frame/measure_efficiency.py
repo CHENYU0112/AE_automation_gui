@@ -3,33 +3,30 @@ import pyvisa
 import time
 import xlsxwriter
 from config import *
-from power_supply import *
 from pverifyDrivers import _scope
 from pverifyDrivers import powsup
 from pverifyDrivers import daq
 from pverifyDrivers import load
 
+import instrument_manager
 
 def efficiency(input_shunt_max_voltage, input_shunt_max_current, output_shunt_max_voltage, output_shunt_max_current,
-        power_supply_GPIB_address, data_logger_GPIB_address, electronic_load_GPIB_address, lecory_usb_address,
         input_v_ch, input_i_ch, output_v_ch, output_i_ch, vcc_ch, ldo_ch, Max_input_voltage, Max_input_current,
         Max_load_current, Input_V, Input_I, Low_load_start, Low_load_step, Low_load_stop, High_load_start, High_load_stop,
-        High_load_step, low_load_timing, high_load_timing, FRE,power_supply_channel):
+        High_load_step, low_load_timing, high_load_timing, FRE,power_supply_channel,instrument_manager):
 
     print("Debug: efficiency function started")
     results = {vin: [] for vin in Input_V}
 
-    rm = pyvisa.ResourceManager()
 
-    print(f"Debug: Instrument addresses - supply: {power_supply_GPIB_address}, load: {electronic_load_GPIB_address}, DAQ: {data_logger_GPIB_address}")
-
-    electronic_load = load.Chroma63600(electronic_load_GPIB_address)
-    
-    power_supply = powsup.N6705C(power_supply_GPIB_address)
-    power_supply_channel = power_supply.GetChannel(power_supply_channel)
-    sc = _scope.TEK_MSO5XB(lecory_usb_address, Simulate=False, Reset=True)    
-    data_logger = daq.DAQ970A(data_logger_GPIB_address)
  
+    instruments = instrument_manager.initialize_instruments()
+    
+    electronic_load = instruments['load']
+    power_supply = instruments['supply']
+    data_logger = instruments['DAQ']
+    sc = instruments['o_scope']
+    power_supply_channel = power_supply.GetChannel(power_supply_channel)
 
     locals_copy = locals().copy()
     for key, value in locals_copy.items():

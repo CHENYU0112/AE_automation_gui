@@ -1,6 +1,4 @@
---index-url https://artifactory.intra.infineon.com/artifactory/api/pypi/pypi-pyverify-vir/simple
-ifx-pyverify
-pygrabber>=0.1
+pygrabber==0.1
 openpyxl>=3.0.7
 opencv-python>=4.5.5.62
 numpy>=1.22.3
@@ -11,4 +9,6 @@ plotly>=5.10.0
 tkinterhtml==0.7
 Pillow==9.4.0
 pythonnet>=3.0.1
-pygrabber==0.1
+xlsxwriter
+tkinter
+pandastable
