@@ -22,8 +22,7 @@ FFU_automation_gui is a graphical user interface application for automating Powe
 ### Setup Steps
 
 1. **Clone the repository:**
-3. **Install the required packages:** pip install -r requirements.txt
-
+2. **Install the required packages:**
 
 ## Usage
 
@@ -31,7 +30,7 @@ FFU_automation_gui is a graphical user interface application for automating Powe
 
 1. Ensure all test instruments are properly connected to your computer.
 2. Run the main application:
-
+   
 ### Configuring Settings
 
 1. In the Setting Frame:
@@ -41,10 +40,11 @@ FFU_automation_gui is a graphical user interface application for automating Powe
 - Set protection parameters
 2. Click the "Set" button to validate and apply the settings.
 
+**Note:** Before running the GUI, you can set the default parameters in the `config.py` file.
+
 ### Running Tests
 
 1. In the Testing Frame:
-- Select the appropriate test tab (Efficiency or Transient)
 - Click "Start Test" to begin the test
 - Monitor the test progress and view results in real-time
 
@@ -62,4 +62,6 @@ If you encounter issues:
 
 ## Contact
 
-For queries or support, please contact ChenYu(ChenYu.Hsieh@infineon) and MingYue(Mingyue.Zhao@infineon.com)
+For queries or support, please contact:
+- Chen Yu (ChenYu.Hsieh@infineon.com)
+- Ming Yue (Mingyue.Zhao@infineon.com)
