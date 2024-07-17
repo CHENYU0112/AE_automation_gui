@@ -4,10 +4,13 @@ import threading
 import queue
 import sys
 from io import StringIO
+from ..setting_frame.TransientTest import TransientTestFrame
 from config import *
 from .test_tab import TestTab
 import datetime
 from PIL import Image, ImageTk
+from .measure_transient import transient  # Make sure this import is correct
+
 
 class TransientTab(TestTab):
     def __init__(self, parent, instrument_manager, setting_frame):
@@ -83,19 +86,38 @@ class TransientTab(TestTab):
             self.stop_button.config(state=tk.DISABLED)
 
     def run_test_thread(self, validated_settings):
+        print("Debug: run_test_thread started")
         try:
             self.print_validated_settings(validated_settings)
+            print("Debug: About to call transient function")
             
-            # Call the tran function here (to be implemented later)
-            # self.results = tran(**validated_settings)
+            # Unpack the validated_settings dictionary
+            selected_ic = validated_settings['selected_ic']
+            power_supply = validated_settings['power_supply']
+            scope = validated_settings['scope']
+            scope_us_div = validated_settings['scope_us_div']
+            scope_persistence = validated_settings['scope_persistence']
+            load_settings = validated_settings['load_settings']
+            protection = validated_settings['protection']
+
+            self.results = transient(
+                selected_ic=selected_ic,
+                power_supply_settings=power_supply,
+                scope_settings=scope,
+                scope_us_div=scope_us_div,
+                scope_persistence=scope_persistence,
+                load_settings=load_settings,
+                protection=protection,
+                instrument_manager=self.instrument_manager
+            )
             
-            # Simulate capturing a scope image (replace with actual scope image capture later)
             self.capture_scope_image()
 
             if get_stop_flag():
                 self.update_results("Test stopped!")
             else:
-                self.update_results("Test completed successfully!")
+                self.update_results(f"Test completed successfully!\n")
+                self.update_results(f"Results: {self.results}")
 
         except Exception as e:
             error_message = f"Error during test: {str(e)}\n"
@@ -106,6 +128,9 @@ class TransientTab(TestTab):
         finally:
             self.test_running = False
             self.restore_output()
+
+
+
 
     def stop_transient_test(self):
         if not self.test_running:
@@ -119,21 +144,29 @@ class TransientTab(TestTab):
         self.stop_button.config(state=tk.DISABLED)
 
     def redirect_output(self):
+        self.output_buffer = StringIO()
         self.old_stdout = sys.stdout
-        sys.stdout = StringIO()
+        sys.stdout = self.output_buffer
 
     def restore_output(self):
         sys.stdout = self.old_stdout
+        output = self.output_buffer.getvalue()
+        self.output_buffer.close()
+        self.update_results(output)
 
     def update_output(self):
         if self.test_running:
-            output = sys.stdout.getvalue()
-            if output:
-                self.results_text.insert(tk.END, output)
-                self.results_text.see(tk.END)
-                sys.stdout.truncate(0)
-                sys.stdout.seek(0)
-            self.after(100, self.update_output)
+            try:
+                output = self.output_buffer.getvalue()
+                if output:
+                    self.results_text.insert(tk.END, output)
+                    self.results_text.see(tk.END)
+                    self.output_buffer.truncate(0)
+                    self.output_buffer.seek(0)
+            except Exception as e:
+                self.update_results(f"Error updating output: {str(e)}")
+            finally:
+                self.after(100, self.update_output)
 
     def check_test_thread(self):
         if self.test_thread.is_alive():
@@ -155,25 +188,25 @@ class TransientTab(TestTab):
             Iin: {validated_settings['power_supply']['iin']} A
             Channel: {validated_settings['power_supply']['vin_channel']}
         VCC Enabled: {validated_settings['power_supply']['vcc_enabled']}
-        Scope:
+        scope:
             us/div: {validated_settings['scope_us_div']}
             Persistence: {validated_settings['scope_persistence']}
+            Channel Assignments:
+                CH1: {validated_settings['scope']['ch1']}
+                CH2: {validated_settings['scope']['ch2']}
+                CH3: {validated_settings['scope']['ch3']}
+                CH4: {validated_settings['scope']['ch4']}
+                CH5: {validated_settings['scope']['ch5']}
+                CH6: {validated_settings['scope']['ch6']}
             
-        Channel Assignments:
-            - Input Voltage: {validated_settings['input_v_ch']}
-            - Input Current: {validated_settings['input_i_ch']}
-            - Output Voltage: {validated_settings['output_v_ch']}
-            - Output Current: {validated_settings['output_i_ch']}
-            - Vcc: {validated_settings['vcc_ch']}
-            - LDO: {validated_settings['ldo_ch']}
-        Load:
-            I Low: {validated_settings['load']['i_low']} A
-            I High: {validated_settings['load']['i_high']} A
-            Low Time: {validated_settings['load']['low_time']} µs
-            High Time: {validated_settings['load']['high_time']} µs
-            Rising SR: {validated_settings['load']['rising_sr']} A/µs
-            Falling SR: {validated_settings['load']['falling_sr']} A/µs
-            Load Level: {validated_settings['load']['load_level']}
+        Load Settings:
+            I Low: {validated_settings['load_settings']['i_low']} A
+            I High: {validated_settings['load_settings']['i_high']} A
+            Low Time: {validated_settings['load_settings']['low_time']} µs
+            High Time: {validated_settings['load_settings']['high_time']} µs
+            Rising SR: {validated_settings['load_settings']['rising_sr']} A/µs
+            Falling SR: {validated_settings['load_settings']['falling_sr']} A/µs
+            Load Level: {validated_settings['load_settings']['load_level']}
         Protection:
             Max Vin: {validated_settings['protection']['max_vin']} V
             Max Iin: {validated_settings['protection']['max_iin']} A

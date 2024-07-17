@@ -7,7 +7,7 @@ import time
 import numpy as np
 from io import StringIO
 from ..setting_frame.EfficiencyTest import EfficiencyTestFrame
-from .measure_eff_Tek import *
+from .measure_efficiency import *
 from config import *
 from .test_tab import *
 import datetime
@@ -110,14 +110,14 @@ class EfficiencyTab(TestTab):
             self.setup_progress_bar(validated_settings)
             self.start_time = time.time()
             self.after(0, self.update_progress_by_time)
-            _stop_flag = False
+            stop_flag = False
             self.print_validated_settings(validated_settings)
             
             # Run the test and get results
             try:
                 sys.stderr.write("Debug: About to call eff function\n")
                 sys.stderr.flush()
-                self.results = eff(**validated_settings)
+                self.results = efficiency(**validated_settings)
                 sys.stderr.write("Debug: eff function completed\n")
                 sys.stderr.flush()
             except Exception as e:

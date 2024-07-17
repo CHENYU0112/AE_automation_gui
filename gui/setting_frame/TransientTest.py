@@ -177,7 +177,7 @@ class TransientTestFrame(TestFrame):
         self.vcc.insert(0, str(settings['power_supply'].get('vcc', 0)))
         self.icc.delete(0, tk.END)
         self.icc.insert(0, str(settings['power_supply'].get('icc', 0)))
-        self.pw_ch_vcc.set(settings['power_supply'].get('vcc_channel', ''))
+        self.pw_ch_vcc.set(settings['power_supply']['vcc_channel'])
         self.toggle_vcc_frame()
 
         # Scope
@@ -220,14 +220,14 @@ class TransientTestFrame(TestFrame):
                 'vcc_enabled': self.vcc_var.get(),
                 'vcc': safe_float(self.vcc.get(), "VCC Voltage") if self.vcc_var.get() else 0,
                 'icc': safe_float(self.icc.get(), "VCC Current") if self.vcc_var.get() else 0,
-                'vcc_channel': self.pw_ch_vcc.get() if self.vcc_var.get() else ''
+                'vcc_channel': self.pw_ch_vcc.get() if self.vcc_var.get() else '2'
             },
             'scope': {
                 f'ch{i+1}': combo.get() for i, combo in enumerate(self.scope_channels)
             },
             'scope_us_div': safe_float(self.scope_us_div_entries[0].get(), "Scope us/div"),
             'scope_persistence': self.scope_persistence_vars[0].get(),
-            'load': {
+            'load_settings': {
                 'i_low': safe_float(self.load_entries[0].get(), "I low"),
                 'low_time': safe_float(self.load_entries[1].get(), "Low time"),
                 'i_high': safe_float(self.load_entries[2].get(), "I high"),
@@ -267,7 +267,7 @@ class TransientTestFrame(TestFrame):
                 raise ValueError("Scope us/div must be greater than 0")
 
             # Validate Load settings
-            load = values['load']
+            load = values['load_settings']
             if load['i_low'] >= load['i_high']:
                 raise ValueError("Low load current must be less than high load current")
             if load['low_time'] <= 0 or load['high_time'] <= 0:
@@ -294,4 +294,3 @@ class TransientTestFrame(TestFrame):
         except Exception as e:
             messagebox.showwarning("Error", f"An unexpected error occurred: {str(e)}")
             return False
-

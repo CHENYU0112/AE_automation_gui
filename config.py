@@ -217,14 +217,14 @@ TDA48820A_SETTINGS = {
             'ch4': 'IL',
             'ch5': 'PGD',
             'ch6': 'output I',
-            'default_us_div': 0.5,
+            'default_us_div': 40,
             'default_persistence': False
         },
         'load': {
             'i_low': 0,
             'i_high': 10,
-            'low_time': 500,
-            'high_time': 500,
+            'low_time': 100,
+            'high_time': 100,
             'rising_sr': 8,
             'falling_sr': 8,
             'default_load_level': 'H'
