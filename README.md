@@ -2,12 +2,14 @@
 
 ## Description
 
-FFU_automation_gui is a graphical user interface application for automating Power over Line (PoL) testing. It provides an interface for setting up and running efficiency and transient tests on electronic components.
+FFU_automation_gui is a graphical user interface application for setting up and running tests on the PoL Buck Converter.
 
 ## Features
 
-- Graphical user interface for test configuration
-- Support for efficiency and transient testing
+- Support for multiple test types, including:
+  - Efficiency testing
+  - Transient testing
+  - [New test types can be added here]
 - Integration with various test instruments
 - Real-time test progress and results display
 - Excel report generation
@@ -22,29 +24,28 @@ FFU_automation_gui is a graphical user interface application for automating Powe
 ### Setup Steps
 
 1. **Clone the repository:**
-3. **Install the required packages:** pip install -r requirements.txt
-
+2. **Install the required packages:** `pip install -r requirements.txt`
 
 ## Usage
 
 ### Launching the Application
 
 1. Ensure all test instruments are properly connected to your computer.
-2. Run the main application:
-
+2. Run the main application: `main.py`
+   
 ### Configuring Settings
 
 1. In the Setting Frame:
 - Select the IC to test
-- Choose the test type (Efficiency or Transient)
-- Configure power supply, DAQ, and load settings
-- Set protection parameters
+- Choose the test type from the available options
+- Configure test-specific parameters
 2. Click the "Set" button to validate and apply the settings.
+
+**Note:** Before running the GUI, you can set the default parameters in the `config.py` file.
 
 ### Running Tests
 
 1. In the Testing Frame:
-- Select the appropriate test tab (Efficiency or Transient)
 - Click "Start Test" to begin the test
 - Monitor the test progress and view results in real-time
 
@@ -62,4 +63,6 @@ If you encounter issues:
 
 ## Contact
 
-For queries or support, please contact ChenYu(ChenYu.Hsieh@infineon) and MingYue(Mingyue.Zhao@infineon.com)
+For queries or support, please contact:
+- ChenYu Hsieh(ChenYu.Hsieh@infineon.com)
+- MingYue Zhao(Mingyue.Zhao@infineon.com)
