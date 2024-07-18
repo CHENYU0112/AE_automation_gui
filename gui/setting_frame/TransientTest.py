@@ -25,7 +25,7 @@ class TransientTestFrame(TestFrame):
         self.create_load_frame()
         
 
-        
+        self.create_pass_fail_frame()
         print("All TransientTestFrame widgets created.")
 
 
@@ -129,6 +129,17 @@ class TransientTestFrame(TestFrame):
         tk.Radiobutton(frame, text="M", variable=self.load_level_var, value="M", bg='white').place(x=150, y=120)
         tk.Radiobutton(frame, text="H", variable=self.load_level_var, value="H", bg='white').place(x=200, y=120)
 
+    def create_pass_fail_frame(self):
+        frame = tk.Frame(self, bd=2, relief=tk.RIDGE, bg='white')
+        frame.place(x=5, y=720, width=460, height=80)
+        
+        tk.Label(frame, text="Pass/Fail Criteria", font=FONT_BOLD, bg='white', fg="black").place(x=5, y=5)
+
+        tk.Label(frame, text="Overshoot (%):", font=FONT_NORMAL, bg='white', fg="black").place(x=5, y=35)
+        self.overshoot_entry = self.create_entry(frame, "", 35, x=120, width=10)
+
+        tk.Label(frame, text="Undershoot (%):", font=FONT_NORMAL, bg='white', fg="black").place(x=240, y=35)
+        self.undershoot_entry = self.create_entry(frame, "", 35, x=355, width=10)
 
 
 
@@ -203,6 +214,12 @@ class TransientTestFrame(TestFrame):
             for entry, value in zip(self.shunt_entries, shunt_values):
                 entry.delete(0, tk.END)
                 entry.insert(0, str(value))
+                
+                # Pass/Fail criteria
+        self.overshoot_entry.delete(0, tk.END)
+        self.overshoot_entry.insert(0, str(settings['pass_fail']['overshoot']))
+        self.undershoot_entry.delete(0, tk.END)
+        self.undershoot_entry.insert(0, str(settings['pass_fail']['undershoot']))
 
     def get_values(self):
         def safe_float(value, field_name):
@@ -236,7 +253,11 @@ class TransientTestFrame(TestFrame):
                 'falling_sr': safe_float(self.load_entries[5].get(), "Falling Slew Rate"),
                 'load_level': self.load_level_var.get()
             },
-            'protection': self.setting_frame.get_protection_values()
+            'protection': self.setting_frame.get_protection_values() ,
+            'pass_fail' :{            
+                'overshoot': float(self.overshoot_entry.get()),
+                'undershoot': float(self.undershoot_entry.get())
+            }
         }
 
         return values

@@ -4,8 +4,9 @@ from config import *
 from instrument_manager import InstrumentManager
 from .EfficiencyTest import EfficiencyTestFrame
 from .TransientTest import TransientTestFrame
+from .SwitchingNoteTest import SwitchingNodeTestFrame
 from .TestFrame import TestFrame
-from .utils import validate_entry , validate_vin_entry
+from .utils import validate_entry , validate_vin_entry ,validate_eload_entry
 
 class SettingFrame(tk.Frame):
     
@@ -67,10 +68,9 @@ class SettingFrame(tk.Frame):
         elif test_type == 'Transient':
             self.current_test_frame = TransientTestFrame(self, self.instrument_manager, selected_ic)
         elif test_type == 'Switching Node':
-            # Add SwitchingNodeTestFrame when implemented
-            pass
+            self.current_test_frame = SwitchingNodeTestFrame(self, self.instrument_manager, selected_ic)
 
-        self.current_test_frame.place(x=25, y=240, width=470, height=780)
+        self.current_test_frame.place(x=25, y=240, width=470, height=810)
         
         self.set_default_values(selected_ic)
 
@@ -112,15 +112,15 @@ class SettingFrame(tk.Frame):
 
     def create_button_frame(self):
         frame = tk.Frame(self, bd=4, relief=tk.RIDGE, bg='gray', borderwidth=0)
-        frame.place(x=25, y=1030, width=450, height=60)
+        frame.place(x=25, y=1050, width=470, height=40)
 
         self.reset_button = tk.Button(frame, text="reset", bg='white', fg="black", padx=20, pady=5,
                   font=BUTTON_FONT, command=self.reset_fields)
-        self.reset_button.place(x=30, y=10)
+        self.reset_button.place(x=30, y=0)
         
         self.set_button = tk.Button(frame, text=" set ", bg='white', fg="black", padx=20, pady=5,
                   font=BUTTON_FONT, command=self.set_values)
-        self.set_button.place(x=270, y=10)
+        self.set_button.place(x=290, y=0)
 
     def set_default_values(self, ic='DEFAULT'):
         test_type = self.test_type_combo.get()

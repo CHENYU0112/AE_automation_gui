@@ -22,7 +22,6 @@ FONT_BOLD = ("times new roman", 12, "bold")
 FONT_TITLE = ("times new roman", 25, "bold")
 BUTTON_FONT = ("Courier New", 12, "bold")
 
-
 # Validation Constants
 MIN_INPUT_VOLTAGE = 4
 MAX_INPUT_VOLTAGE = 16
@@ -31,7 +30,7 @@ MAX_OUTPUT_CURRENT = 20
 # DAQ Options
 DAQ_OPTIONS = ['input V', 'input I', 'output V', 'output I', 'Vcc', 'LDO']
 
-# DAQ Options
+# Scope Options
 Scope_OPTIONS = ['input V', 'SW', 'output V', 'IL', 'PGD', 'output I']
 
 # Power Supply Channels
@@ -110,12 +109,16 @@ TRANSIENT_DEFAULT_SETTINGS = {
         'max_vin': 16,
         'max_iin': 6,
         'max_iout': 20
+    },
+    'pass_fail': {
+        'overshoot': 5,  # in %
+        'undershoot': 5  # in %
     }
 }
 
 SWITCHING_NODE_DEFAULT_SETTINGS = {
     'power_supply': {
-        'vin': 12,
+        'vin': [5,9,12,16],
         'iin': 5,
         'vin_channel': ' 1',
         'vcc': 3.3,
@@ -133,20 +136,13 @@ SWITCHING_NODE_DEFAULT_SETTINGS = {
         'default_persistence': True
     },
     'load': {
-        'low_load': 1,
-        'high_load': 15,
-        'load_step': 1
+        'load_values': [0,5,10],
+        'load_delay': 1
     },
     'protection': {
         'max_vin': 16,
         'max_iin': 6,
         'max_iout': 20
-    },
-    'current_shunt': {
-        'input_max_v': 0.1,
-        'input_max_i': 5,
-        'output_max_v': 0.1,
-        'output_max_i': 20
     }
 }
 
@@ -225,12 +221,40 @@ TDA48820A_SETTINGS = {
             'max_vin': 14,
             'max_iin': 4,
             'max_iout': 15
-        }
+        },
+        'pass_fail': {
+            'overshoot': 5,  # in %
+            'undershoot': 5  # in %
+        },
     },
     'Switching Node': {
-        # Add TDA48820A-specific switching node settings here
-        # For now, using the default switching node settings
-        **SWITCHING_NODE_DEFAULT_SETTINGS
+        'power_supply': {
+            'vin': [5,9,12,16],
+            'iin': 3,
+            'vin_channel': ' 1',
+            'vcc': 3,
+            'icc': 1,
+            'vcc_channel': ' 2'
+        },
+        'scope': {
+            'ch1': 'SW',
+            'ch2': 'input V',
+            'ch3': 'output V',
+            'ch4': 'IL',
+            'ch5': 'PGD',
+            'ch6': 'output I',
+            'default_us_div': 0.1,
+            'default_persistence': True
+        },
+        'load': {
+            'load_values': [0,5,10],
+            'load_delay': 1
+        },
+        'protection': {
+            'max_vin': 14,
+            'max_iin': 4,
+            'max_iout': 15
+        }
     }
 }
 
@@ -239,8 +263,6 @@ IC_DEFAULT_SETTINGS = {
     'DEFAULT': DEFAULT_SETTINGS,
     'TDA48820A': TDA48820A_SETTINGS
 }
-
-
 
 # Test Configuration
 TEST_CONFIG = {
@@ -299,6 +321,8 @@ INSTRUMENT_CATEGORIES = {
     'meter': ['2461', '34465A']
 }
 
+
+# CHANNELS
 CHANNELS = {
     'input_v': 101,
     'input_i': 102,

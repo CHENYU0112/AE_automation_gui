@@ -2,6 +2,7 @@ import os
 import time
 from datetime import datetime
 import numpy as np
+from openpyxl.styles import PatternFill, Font, Alignment
 from openpyxl import Workbook
 from openpyxl.drawing.image import Image
 from openpyxl.styles import Font, Alignment
@@ -9,7 +10,7 @@ from config import *
 import pyvisa
 from pverifyDrivers import _scope, powsup, daq, load
 
-def transient(selected_ic, power_supply_settings, scope_settings, scope_persistence, scope_us_div, load_settings, protection, instrument_manager):
+def transient(selected_ic, power_supply_settings, scope_settings, scope_persistence, scope_us_div, load_settings, protection, pass_fail_criteria, instrument_manager):
     print(f"Debug: transient function started for {selected_ic}")
     results = {}
     print("Transient test started")
@@ -77,6 +78,8 @@ def transient(selected_ic, power_supply_settings, scope_settings, scope_persiste
         sc.set_measurement(MeasureIndex=2, MeasureType='MINIMUM', State='ON', Source=int(vout_ch_num[-1]))
         sc.set_measurement(MeasureIndex=3, MeasureType='RISETIME', State='ON', Source=int(iout_ch_num[-1]))
         sc.set_measurement(MeasureIndex=4, MeasureType='FALLTIME', State='ON', Source=int(iout_ch_num[-1]))
+
+        
         
         # Enable display overlay
         sc.display_overlay()
@@ -146,13 +149,56 @@ def transient(selected_ic, power_supply_settings, scope_settings, scope_persiste
         sc._write('HOR:POS 50')
         sc.set_screen_text(text="", text_no=3)
 
+     
+
+ 
+        vout_ch.ProbeSetup(Coupling='DC', Bandwidth='20E+06', Vrange=10, Impedance=1e+6, Position=-3.5)
+        # Allow some time for the change to take effect
+        time.sleep(0.5)
+
+        # Set up measurements
+
+        sc.set_measurement(MeasureIndex=3, MeasureType='MEAN', State='ON', Source=int(vout_ch_num[-1]))
+
+        
+        # Capture waveform
+        sc.run()
+        time.sleep(1)  # Allow time for measurement to stabilize
+
+        # Get measurements
+
+        vout_mean = float(sc.get_mean_measurement(Index=3))
+
+        
+        # Calculate overshoot and undershoot
+        overshoot = vout_max*1000
+        undershoot = -1*vout_mean - vout_min*1000
+
+        # Calculate percentages
+        overshoot_percentage = (vout_max / vout_mean) * 100
+        undershoot_percentage = (-vout_min / vout_mean) * 100
+
+        # Determine pass/fail status
+        overshoot_pass = overshoot_percentage <= pass_fail_criteria['overshoot']
+        undershoot_pass = undershoot_percentage <= pass_fail_criteria['undershoot']
+
+        # Print results for debugging
+        print(f"Vout mean: {vout_mean:.3f} V")
+        print(f"Overshoot: {overshoot:.3f} mV ({overshoot_percentage:.2f}%)")
+        print(f"Undershoot: {undershoot:.3f} mV ({undershoot_percentage:.2f}%)")
+        print(f"Overshoot  : {'pass' if overshoot_pass else 'fail'}")
+        print(f"Undershoot : {'pass' if undershoot_pass else 'fail'}")
 
         results = {
-            'overshoot': f"{overshoot_mv:.2f} mV",
-            'undershoot': f"{undershoot_mv:.2f} mV",
-            'rise_time': f"{rise_time_us:.2f} µs",
-            'fall_time': f"{fall_time_us:.2f} µs"
+            'vout_mean': f"{vout_mean:.3f} V",
+            'overshoot': f"{overshoot:.3f} V ({overshoot_percentage:.2f}%)",
+            'undershoot': f"{undershoot:.3f} V ({undershoot_percentage:.2f}%)",
+            'rise_time': f"{rise_time*1e6:.2f} µs",
+            'fall_time': f"{fall_time*1e6:.2f} µs",
+            'overshoot_pass': overshoot_pass,
+            'undershoot_pass': undershoot_pass,
         }
+
 
         # Create Excel file
         wb = Workbook()
@@ -174,17 +220,38 @@ def transient(selected_ic, power_supply_settings, scope_settings, scope_persiste
         ws['A10'] = f"High Load Current: {load_settings['i_high']} A"
         ws['A11'] = f"Low Time: {load_settings['low_time']} µs"
         ws['A12'] = f"High Time: {load_settings['high_time']} µs"
-
+        ws['A13'] = f"Overshoot Limit: {pass_fail_criteria['overshoot']}%"
+        ws['A14'] = f"Undershoot Limit: {pass_fail_criteria['undershoot']}%"
         # Add results
-        ws['A14'] = "Test Results"
-        ws['A14'].font = Font(size=14, bold=True)
-        ws['A15'] = f"Overshoot: {results['overshoot']}"
-        ws['A16'] = f"Undershoot: {results['undershoot']}"
+        ws['A16'] = "Test Results"
+        ws['A16'].font = Font(size=14, bold=True)
         ws['A17'] = f"Rise Time: {results['rise_time']}"
         ws['A18'] = f"Fall Time: {results['fall_time']}"
+        ws['A19'] = f"Overshoot: {results['overshoot']}"
+        ws['A20'] = f"Undershoot: {results['undershoot']}"
+        
+        # Define fill colors
+        green_fill = PatternFill(start_color='00FF00', end_color='00FF00', fill_type='solid')
+        red_fill = PatternFill(start_color='FF0000', end_color='FF0000', fill_type='solid')
+
+        # Add pass/fail indicators with color
+        ws['B19'] = 'PASS' if results['overshoot_pass'] else 'FAIL'
+        ws['B19'].fill = green_fill if results['overshoot_pass'] else red_fill
+        ws['B19'].font = Font(color='FFFFFF', bold=True)
+        ws['B19'].alignment = Alignment(horizontal='center')
+
+        ws['B20'] = 'PASS' if results['undershoot_pass'] else 'FAIL'
+        ws['B20'].fill = green_fill if results['undershoot_pass'] else red_fill
+        ws['B20'].font = Font(color='FFFFFF', bold=True)
+        ws['B20'].alignment = Alignment(horizontal='center')
+
+        # Adjust column widths for better readability
+        ws.column_dimensions['A'].width = 40
+        ws.column_dimensions['B'].width = 15
+
 
         # Add images
-        img_row = 25
+        img_row = 30
         for img_file, title in [(full_cycle_image, "Full Cycle"), (rising_edge_image, "Rising Edge"), (falling_edge_image, "Falling Edge")]:
             img = Image(img_file)
             img.width = 1200

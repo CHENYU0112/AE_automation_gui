@@ -39,7 +39,7 @@ class MainApplication(tk.Frame):
         self.create_frames()
 
     def create_title(self):
-        title = tk.Label(self, text="PoL Automation Test", font=FONT_TITLE, bg='black', fg="white")
+        title = tk.Label(self, text="PoL Automation", font=FONT_TITLE, bg='black', fg="white")
         title.pack(fill=tk.X, padx=5, pady=5)
 
     def create_status_bar(self):

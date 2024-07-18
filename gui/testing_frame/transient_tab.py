@@ -99,6 +99,8 @@ class TransientTab(TestTab):
             scope_persistence = validated_settings['scope_persistence']
             load_settings = validated_settings['load_settings']
             protection = validated_settings['protection']
+            pass_fail_criteria = validated_settings['pass_fail']
+
 
             self.results = transient(
                 selected_ic=selected_ic,
@@ -108,6 +110,7 @@ class TransientTab(TestTab):
                 scope_persistence=scope_persistence,
                 load_settings=load_settings,
                 protection=protection,
+                pass_fail_criteria=pass_fail_criteria,
                 instrument_manager=self.instrument_manager
             )
             
@@ -210,7 +213,10 @@ class TransientTab(TestTab):
         Protection:
             Max Vin: {validated_settings['protection']['max_vin']} V
             Max Iin: {validated_settings['protection']['max_iin']} A
-            Max Iout: {validated_settings['protection']['max_iout']} A
+            Max Iout: {validated_settings['protection']['max_iout']} A         
+        Pass/Fail Criteria:
+            Overshoot: {validated_settings['pass_fail']['overshoot']} %
+            Undershoot: {validated_settings['pass_fail']['undershoot']} %
         """
         self.update_results(print_string)
 
