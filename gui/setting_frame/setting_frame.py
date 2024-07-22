@@ -4,7 +4,7 @@ from config import *
 from instrument_manager import InstrumentManager
 from .EfficiencyTest import EfficiencyTestFrame
 from .TransientTest import TransientTestFrame
-from .SwitchingNoteTest import SwitchingNodeTestFrame
+from .SwitchingNodeTest import SwitchingNodeTestFrame
 from .TestFrame import TestFrame
 from .utils import validate_entry , validate_vin_entry ,validate_eload_entry
 

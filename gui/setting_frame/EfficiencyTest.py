@@ -2,7 +2,7 @@ from .TestFrame import TestFrame
 import tkinter as tk
 from tkinter import ttk, messagebox
 from config import *
-from .utils import validate_entry, validate_vin_entry
+from .utils import *
 class EfficiencyTestFrame(TestFrame):
     def __init__(self, parent, instrument_manager, selected_ic):
         super().__init__(parent, instrument_manager, selected_ic)
@@ -195,17 +195,6 @@ class EfficiencyTestFrame(TestFrame):
 
     def get_values(self):
         try:
-            def safe_float_list(value, field_name):
-                try:
-                    return [float(v.strip()) for v in value.split(',') if v.strip()]
-                except ValueError:
-                    raise ValueError(f"Invalid input for {field_name}")
-
-            def safe_float(value, field_name):
-                try:
-                    return float(value) if value else 0
-                except ValueError:
-                    raise ValueError(f"Invalid input for {field_name}")
 
             # Collect and validate values
             input_v = safe_float_list(self.vin.get(), "Input Voltage (Input_V)")

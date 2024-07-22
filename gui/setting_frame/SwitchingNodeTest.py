@@ -2,7 +2,7 @@ from .TestFrame import TestFrame
 import tkinter as tk
 from tkinter import ttk, messagebox
 from config import *
-from .utils import validate_entry, validate_vin_entry ,validate_eload_entry
+from .utils import *
 
 class SwitchingNodeTestFrame(TestFrame):
     def __init__(self, parent, instrument_manager, selected_ic):
@@ -139,21 +139,10 @@ class SwitchingNodeTestFrame(TestFrame):
 
     def get_values(self):
         try:
-            def safe_float(value, field_name):
-                try:
-                    return float(value) if value else 0
-                except ValueError:
-                    raise ValueError(f"Invalid input for {field_name}")
-
-            def safe_float_list(value, field_name):
-                try:
-                    return [float(v.strip()) for v in value.split(',') if v.strip()]
-                except ValueError:
-                    raise ValueError(f"Invalid input for {field_name}")
-
             values = {
+                'selected_ic': self.selected_ic,
                 'power_supply': {
-                    'vin': safe_float(self.vin.get(), "Input Voltage (Vin)"),
+                    'vin': safe_float_list(self.vin.get(), "Input Voltage (Vin)"),
                     'iin': safe_float(self.iin.get(), "Input Current (Iin)"),
                     'vin_channel': self.pw_ch_vin.get(),
                     'vcc_enabled': self.vcc_var.get(),
@@ -180,37 +169,42 @@ class SwitchingNodeTestFrame(TestFrame):
             return None
 
 
-
     def validate_values(self, values):
-            try:
-                # ... (previous validation code) ...
+        try:
+            if values['scope_us_div'] <= 0:
+                raise ValueError("Scope us/div must be greater than 0")
 
-                if values['scope_us_div'] <= 0:
-                    raise ValueError("Scope us/div must be greater than 0")
+            # Validate Power Supply settings
+            vin_values = values['power_supply']['vin']
+            if any(vin > MAX_INPUT_VOLTAGE or vin < MIN_INPUT_VOLTAGE for vin in vin_values):
+                raise ValueError(f"Input voltage (Vin) range should be between {MIN_INPUT_VOLTAGE}V~{MAX_INPUT_VOLTAGE}V")
 
-                # Validate Load settings
-                load_values = values['load']['load_values']
-                if len(load_values) < 2:
-                    raise ValueError("At least two load values must be provided")
-                if any(value < 0 or value > MAX_OUTPUT_CURRENT for value in load_values):
-                    raise ValueError(f"Load values must be between 0A and {MAX_OUTPUT_CURRENT}A")
-                if values['load']['load_delay'] <= 0:
-                    raise ValueError("Load delay must be greater than 0")
+            if values['power_supply']['iin'] > MAX_OUTPUT_CURRENT:
+                raise ValueError(f"Input current (Iin) should not exceed {MAX_OUTPUT_CURRENT}A")
 
-                # Validate protection settings
-                protection = values['protection']
-                if protection['max_vin'] < values['power_supply']['vin']:
-                    raise ValueError("Max input voltage protection must be greater than or equal to input voltage")
-                if protection['max_iin'] < values['power_supply']['iin']:
-                    raise ValueError("Max input current protection must be greater than or equal to input current")
-                if protection['max_iout'] < max(load_values):
-                    raise ValueError("Max output current protection must be greater than or equal to the highest load value")
+            # Validate Load settings
+            load_values = values['load']['load_values']
+            if len(load_values) < 2:
+                raise ValueError("At least two load values must be provided")
+            if any(value < 0 or value > MAX_OUTPUT_CURRENT for value in load_values):
+                raise ValueError(f"Load values must be between 0A and {MAX_OUTPUT_CURRENT}A")
+            if values['load']['load_delay'] <= 0:
+                raise ValueError("Load delay must be greater than 0")
 
-                return True
+            # Validate protection settings
+            protection = values['protection']
+            if protection['max_vin'] < max(vin_values):
+                raise ValueError("Max input voltage protection must be greater than or equal to the highest input voltage")
+            if protection['max_iin'] < values['power_supply']['iin']:
+                raise ValueError("Max input current protection must be greater than or equal to input current")
+            if protection['max_iout'] < max(load_values):
+                raise ValueError("Max output current protection must be greater than or equal to the highest load value")
 
-            except ValueError as e:
-                messagebox.showwarning("Validation Error", str(e))
-                return False
-            except Exception as e:
-                messagebox.showwarning("Error", f"An unexpected error occurred: {str(e)}")
-                return False
+            return True
+
+        except ValueError as e:
+            messagebox.showwarning("Validation Error", str(e))
+            return False
+        except Exception as e:
+            messagebox.showwarning("Error", f"An unexpected error occurred: {str(e)}")
+            return False

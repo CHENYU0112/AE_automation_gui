@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from .efficiency_tab import EfficiencyTab
 from .transient_tab import TransientTab
+from .switchingnode_tab import SwitchingNodeTab
 from config import *
 
 class TestingFrame(tk.Frame):
@@ -39,6 +40,7 @@ class TestingFrame(tk.Frame):
         tab_classes = {
             'Efficiency': EfficiencyTab,
             'Transient': TransientTab,
+            'Switching Node': SwitchingNodeTab,
             # Add more test types here as needed
         }
         return tab_classes.get(test_type)

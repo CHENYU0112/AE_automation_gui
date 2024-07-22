@@ -184,13 +184,11 @@ def transient(selected_ic, power_supply_settings, scope_settings, scope_persiste
 
         # Print results for debugging
         print(f"Vout mean: {vout_mean:.3f} V")
-        print(f"Overshoot: {overshoot:.3f} mV ({overshoot_percentage:.2f}%)")
-        print(f"Undershoot: {undershoot:.3f} mV ({undershoot_percentage:.2f}%)")
-        print(f"Overshoot  : {'pass' if overshoot_pass else 'fail'}")
-        print(f"Undershoot : {'pass' if undershoot_pass else 'fail'}")
+        print(f"Overshoot: {overshoot:.3f} mV ({overshoot_percentage:.2f}%)  {'pass' if overshoot_pass else 'fail'}")
+        print(f"Undershoot: {undershoot:.3f} mV ({undershoot_percentage:.2f}%)  {'pass' if undershoot_pass else 'fail'}")
 
         results = {
-            'vout_mean': f"{vout_mean:.3f} V",
+            'vout_mean': f"{vout_mean:.3f} V" ,
             'overshoot': f"{overshoot:.3f} V ({overshoot_percentage:.2f}%)",
             'undershoot': f"{undershoot:.3f} V ({undershoot_percentage:.2f}%)",
             'rise_time': f"{rise_time*1e6:.2f} µs",

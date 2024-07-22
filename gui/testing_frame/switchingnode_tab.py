@@ -4,17 +4,17 @@ import threading
 import queue
 import sys
 from io import StringIO
-from ..setting_frame.TransientTest import TransientTestFrame
+from ..setting_frame.SwitchingNodeTest import SwitchingNodeTestFrame
 from config import *
 from .test_tab import TestTab
 import datetime
 from PIL import Image, ImageTk
-from .measure_transient import transient  # Make sure this import is correct
+from .measure_switchingnode import switching_node  # You'll need to create this function
 
 
-class TransientTab(TestTab):
+class SwitchingNodeTab(TestTab):
     def __init__(self, parent, instrument_manager, setting_frame):
-        super().__init__(parent, instrument_manager, setting_frame, "Transient")
+        super().__init__(parent, instrument_manager, setting_frame, "Switching Node")
         self.results = []
         self.scope_image = None
 
@@ -26,17 +26,17 @@ class TransientTab(TestTab):
         control_frame = tk.Frame(self, bd=2, relief=tk.RIDGE)
         control_frame.pack(pady=10, padx=10, fill=tk.X)
 
-        self.start_button = tk.Button(control_frame, text="Start Transient Test", command=self.start_transient_test)
+        self.start_button = tk.Button(control_frame, text="Start Switching Node Test", command=self.start_switching_node_test)
         self.start_button.pack(side=tk.LEFT, padx=5)
 
-        self.stop_button = tk.Button(control_frame, text="Stop Test", command=self.stop_transient_test, state=tk.DISABLED)
+        self.stop_button = tk.Button(control_frame, text="Stop Test", command=self.stop_switching_node_test, state=tk.DISABLED)
         self.stop_button.pack(side=tk.LEFT, padx=5)
 
     def create_results_area(self):
         results_frame = tk.Frame(self, bd=2, relief=tk.RIDGE)
         results_frame.pack(pady=10, padx=10, fill=tk.BOTH, expand=True)
 
-        self.results_title = tk.Label(results_frame, text="Transient Test ", font=("times new roman", 16, "bold"), bg='black', fg="white")
+        self.results_title = tk.Label(results_frame, text="Switching Node Test", font=("times new roman", 16, "bold"), bg='black', fg="white")
         self.results_title.pack(fill=tk.X, padx=5, pady=5)
 
         self.notebook = ttk.Notebook(results_frame)
@@ -57,7 +57,7 @@ class TransientTab(TestTab):
         self.image_label.pack(fill=tk.BOTH, expand=True)
         self.notebook.add(self.image_frame, text="Scope Image")
 
-    def start_transient_test(self):
+    def start_switching_node_test(self):
         if self.test_running:
             messagebox.showwarning("Warning", "Test is already running")
             return
@@ -89,37 +89,26 @@ class TransientTab(TestTab):
         print("Debug: run_test_thread started")
         try:
             self.print_validated_settings(validated_settings)
-            print("Debug: About to call transient function")
+            print("Debug: About to call switching_node function")
             
-            # Unpack the validated_settings dictionary
-            selected_ic = validated_settings['selected_ic']
-            power_supply = validated_settings['power_supply']
-            scope = validated_settings['scope']
-            scope_us_div = validated_settings['scope_us_div']
-            scope_persistence = validated_settings['scope_persistence']
-            load_settings = validated_settings['load_settings']
-            protection = validated_settings['protection']
-            pass_fail_criteria = validated_settings['pass_fail']
-
-
-            self.results = transient(
-                selected_ic=selected_ic,
-                power_supply_settings=power_supply,
-                scope_settings=scope,
-                scope_us_div=scope_us_div,
-                scope_persistence=scope_persistence,
-                load_settings=load_settings,
-                protection=protection,
-                pass_fail_criteria=pass_fail_criteria,
+            self.results = switching_node(
+                selected_ic=validated_settings['selected_ic'],
+                power_supply_settings=validated_settings['power_supply'],
+                scope_settings=validated_settings['scope'],
+                scope_persistence=validated_settings['scope_persistence'],
+                scope_us_div=validated_settings['scope_us_div'],
+                load_settings=validated_settings['load'],
+                protection=validated_settings['protection'],
                 instrument_manager=self.instrument_manager
             )
-            
+                        
             self.capture_scope_image()
 
             if get_stop_flag():
                 self.update_results("Test stopped!")
             else:
                 self.update_results(f"Test completed successfully!\n")
+                self.update_results(f"Results: {self.results}")
 
         except Exception as e:
             error_message = f"Error during test: {str(e)}\n"
@@ -131,10 +120,7 @@ class TransientTab(TestTab):
             self.test_running = False
             self.restore_output()
 
-
-
-
-    def stop_transient_test(self):
+    def stop_switching_node_test(self):
         if not self.test_running:
             return
         
@@ -190,7 +176,7 @@ class TransientTab(TestTab):
             Iin: {validated_settings['power_supply']['iin']} A
             Channel: {validated_settings['power_supply']['vin_channel']}
         VCC Enabled: {validated_settings['power_supply']['vcc_enabled']}
-        scope:
+        Scope:
             us/div: {validated_settings['scope_us_div']}
             Persistence: {validated_settings['scope_persistence']}
             Channel Assignments:
@@ -200,22 +186,13 @@ class TransientTab(TestTab):
                 CH4: {validated_settings['scope']['ch4']}
                 CH5: {validated_settings['scope']['ch5']}
                 CH6: {validated_settings['scope']['ch6']}
-            
-        Load Settings:
-            I Low: {validated_settings['load_settings']['i_low']} A
-            I High: {validated_settings['load_settings']['i_high']} A
-            Low Time: {validated_settings['load_settings']['low_time']} µs
-            High Time: {validated_settings['load_settings']['high_time']} µs
-            Rising SR: {validated_settings['load_settings']['rising_sr']} A/µs
-            Falling SR: {validated_settings['load_settings']['falling_sr']} A/µs
-            Load Level: {validated_settings['load_settings']['load_level']}
+        Load:
+            Load Values: {validated_settings['load']['load_values']}
+            Load Delay: {validated_settings['load']['load_delay']} s
         Protection:
             Max Vin: {validated_settings['protection']['max_vin']} V
             Max Iin: {validated_settings['protection']['max_iin']} A
-            Max Iout: {validated_settings['protection']['max_iout']} A         
-        Pass/Fail Criteria:
-            Overshoot: {validated_settings['pass_fail']['overshoot']} %
-            Undershoot: {validated_settings['pass_fail']['undershoot']} %
+            Max Iout: {validated_settings['protection']['max_iout']} A
         """
         self.update_results(print_string)
 
