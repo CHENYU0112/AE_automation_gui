@@ -77,7 +77,7 @@ class SwitchingNodeTestFrame(TestFrame):
         tk.Label(frame, text=self.instrument_manager.get_instrument_model('load'), font=FONT_NORMAL, bg='white', fg="black").place(x=110, y=5)
 
         self.load_values = self.create_entry(frame, "Load Values(A)", 40, width=30,validate_command=validate_eload_entry)
-        self.load_delay = self.create_entry(frame, "Delay(s)", 70, width=10)
+
 
     def create_entry(self, parent, label, y, x=None, width=8, validate_command=None):
         if label:
@@ -134,8 +134,7 @@ class SwitchingNodeTestFrame(TestFrame):
         # Load
         self.load_values.delete(0, tk.END)
         self.load_values.insert(0, ", ".join(map(str, settings['load']['load_values'])))
-        self.load_delay.delete(0, tk.END)
-        self.load_delay.insert(0, str(settings['load']['load_delay']))
+
 
     def get_values(self):
         try:
@@ -157,7 +156,7 @@ class SwitchingNodeTestFrame(TestFrame):
                 'scope_persistence': self.persistence_var.get(),
                 'load': {
                     'load_values': safe_float_list(self.load_values.get(), "Load Values"),
-                    'load_delay': safe_float(self.load_delay.get(), "Load Delay")
+
                 },
                 'protection': self.setting_frame.get_protection_values()
             }
